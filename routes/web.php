@@ -28,7 +28,8 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 
 // 自作のカスタムレポートのルーティング情報
-use App\Http\Controllers\CustomAssetController;
+use App\Http\Controllers\CustomReport;
+use App\Http\Controllers\CustomReportController;
 
 Route::group(['middleware' => 'auth'], function () {
     /*
@@ -415,8 +416,11 @@ Route::group(['middleware' => ['auth']], function () {
         [ReportsController::class, 'postAssetAcceptanceReport']
     )->name('reports/export/unaccepted_assets');
 
-    // 自作のカスタムレポートのルーティング情報
-    Route::get('/CustomAssetReport/assets_and_licences_report', [CustomAssetController::class, 'assets_and_licences_report']);
+    // ----- 自作のカスタムレポートのルーティング情報
+    // カスタムレポート一覧画面のアクション
+    Route::get('/CustomReport', [CustomReportController::class, 'index']);
+    // 資産情報とライセンスを並列で出力するレポートのダウロード用アクション
+    Route::get('/CustomReport/assets_and_licences_report', [CustomReportController::class, 'assets_and_licences_report']);
 });
 
 Route::get(

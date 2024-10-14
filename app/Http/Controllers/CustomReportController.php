@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\Request;
+
 // DBアクセスに必要なライブラリ
 use Illuminate\Support\Facades\DB;
 
@@ -9,9 +11,19 @@ use Illuminate\Support\Facades\DB;
 use App\Exports\SqlExport;
 use Maatwebsite\Excel\Facades\Excel;
 
-class CustomAssetController extends Controller
+class CustomReportController extends Controller
 {
-    //
+    /**
+     * カスタムレポートのダウンロード一覧画面を表示するアクションメソッド
+     */
+    public function index()
+    {
+        return view('CustomAsset.index');
+    }
+
+    /**
+     * 資産とライセンス情報を並列で抽出し、Excelでダウンロードさせるアクションメソッド。
+     */
     public function assets_and_licences_report()
     {
         // テーブルのカラム名と、Excelに出力するヘッダ名の対応配列変数を定義
@@ -43,8 +55,5 @@ class CustomAssetController extends Controller
 
         // Excelファイルのダウンロードを実行
         return Excel::download($sqlExportObj, 'assets.xlsx');
-
-        // // ビューにデータを渡す
-        // return view('assets_and_licences_report', ['results' => $results]);
     }
 }
