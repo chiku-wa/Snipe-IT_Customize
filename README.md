@@ -18,7 +18,7 @@ Snipe-ITにカスタムなレポート機能を追加し、任意のSQLを実行
 
 | 項目           | 値                         |
 | -------------- | -------------------------- |
-| コントローラ名 | CustomAssetController      |
+| コントローラ名 | CustomReportController     |
 | アクション     | assets_and_licenses_report |
 
 
@@ -87,7 +87,7 @@ class SqlExport implements FromCollection, WithHeadings
 下記コマンドでコントローラを作成する。
 
 ```bash
-php artisan make:controller CustomAssetController
+php artisan make:controller CustomReportController
 ```
 
 作成したコントローラを以下の通り修正する。
@@ -103,7 +103,7 @@ use Illuminate\Support\Facades\DB;
 use App\Exports\SqlExport;
 use Maatwebsite\Excel\Facades\Excel;
 
-class CustomAssetController extends Controller
+class CustomReportController extends Controller
 {
     //
     public function assets_and_licences_report()
@@ -153,14 +153,14 @@ routes/web.php
 ・・・
 ★↓追記
 // 自作のカスタムレポートのルーティング情報
-use App\Http\Controllers\CustomAssetController;
+use App\Http\Controllers\CustomReportController;
 ・・・
 
 Route::group(['middleware' => ['auth']], function () {
 ・・・
 	★↓追記
     // 自作のカスタムレポートのルーティング情報
-    Route::get('/CustomAssetReport/assets_and_licences_report', [CustomAssetController::class, 'assets_and_licences_report']);
+    Route::get('/CustomAssetReport/assets_and_licences_report', [CustomReportController::class, 'assets_and_licences_report']);
 ・・・
 ```
 
@@ -170,7 +170,7 @@ http://<IPアドレス>/CustomAssetReport/assets_and_licences_report
 ## 参考：レポートのカスタマイズ方法
 コントローラの以下の記述を修正すれば良い。
 
-app/Http/Controllers/CustomAssetController.php
+app/Http/Controllers/CustomReportController.php
 ```php
 ・・・
         $columnHeaderHash = [
