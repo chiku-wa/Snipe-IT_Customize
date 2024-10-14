@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-
 // DBアクセスに必要なライブラリ
 use Illuminate\Support\Facades\DB;
 
@@ -11,14 +9,14 @@ use Illuminate\Support\Facades\DB;
 use App\Exports\SqlExport;
 use Maatwebsite\Excel\Facades\Excel;
 
-class CustomReportController extends Controller
+class MyReportController extends Controller
 {
     /**
      * カスタムレポートのダウンロード一覧画面を表示するアクションメソッド
      */
     public function index()
     {
-        return view('CustomAsset.index');
+        return view('MyReport.index');
     }
 
     /**

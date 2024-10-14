@@ -28,8 +28,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 
 // 自作のカスタムレポートのルーティング情報
-use App\Http\Controllers\CustomReport;
-use App\Http\Controllers\CustomReportController;
+use App\Http\Controllers\MyReportController;
 
 Route::group(['middleware' => 'auth'], function () {
     /*
@@ -418,9 +417,10 @@ Route::group(['middleware' => ['auth']], function () {
 
     // ----- 自作のカスタムレポートのルーティング情報
     // カスタムレポート一覧画面のアクション
-    Route::get('/CustomReport', [CustomReportController::class, 'index']);
+    Route::get('/MyReport', [MyReportController::class, 'index']);
     // 資産情報とライセンスを並列で出力するレポートのダウロード用アクション
-    Route::get('/CustomReport/assets_and_licences_report', [CustomReportController::class, 'assets_and_licences_report']);
+    Route::get('/MyReport/assets_and_licences_report', [MyReportController::class, 'assets_and_licences_report'])
+        ->name('myreport/assets_and_licences_report');
 });
 
 Route::get(

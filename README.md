@@ -11,14 +11,14 @@ Snipe-ITにカスタムなレポート機能を追加し、任意のSQLを実行
  composer require maatwebsite/excel
 ```
 
-### 本著で作成するプログラムの使用
+### 作成するプログラムの使用
 具体例を示すため、本著では下記の公正であることを前提に記載する。
 
 コントローラの構成：
 
 | 項目           | 値                         |
 | -------------- | -------------------------- |
-| コントローラ名 | CustomReportController     |
+| コントローラ名 | MyReportController         |
 | アクション     | assets_and_licenses_report |
 
 
@@ -87,7 +87,7 @@ class SqlExport implements FromCollection, WithHeadings
 下記コマンドでコントローラを作成する。
 
 ```bash
-php artisan make:controller CustomReportController
+php artisan make:controller MyReportController
 ```
 
 作成したコントローラを以下の通り修正する。
@@ -103,7 +103,7 @@ use Illuminate\Support\Facades\DB;
 use App\Exports\SqlExport;
 use Maatwebsite\Excel\Facades\Excel;
 
-class CustomReportController extends Controller
+class MyReportController extends Controller
 {
     //
     public function assets_and_licences_report()
@@ -153,24 +153,24 @@ routes/web.php
 ・・・
 ★↓追記
 // 自作のカスタムレポートのルーティング情報
-use App\Http\Controllers\CustomReportController;
+use App\Http\Controllers\MyReportController;
 ・・・
 
 Route::group(['middleware' => ['auth']], function () {
 ・・・
 	★↓追記
     // 自作のカスタムレポートのルーティング情報
-    Route::get('/CustomAssetReport/assets_and_licences_report', [CustomReportController::class, 'assets_and_licences_report']);
+    Route::get('/MyReport/assets_and_licences_report', [MyReportController::class, 'assets_and_licences_report']);
 ・・・
 ```
 
 上記を追記したら、以下のアドレスにアクセスする。
-http://<IPアドレス>/CustomAssetReport/assets_and_licences_report
+http://<IPアドレス>/MyReport/assets_and_licences_report
 
 ## 参考：レポートのカスタマイズ方法
 コントローラの以下の記述を修正すれば良い。
 
-app/Http/Controllers/CustomReportController.php
+app/Http/Controllers/MyReportController.php
 ```php
 ・・・
         $columnHeaderHash = [

@@ -782,6 +782,11 @@ dir="{{ Helper::determineLanguageDirection() }}">
                                             {{ trans('general.accessory_report') }}
                                         </a>
                                     </li>
+                                    <li>
+                                        <a href="{{ url('MyReport/') }}" {{ (Request::is('myReport/index') ? ' class="active"' : '') }}>
+                                            カスタムレポート
+                                        </a>
+                                    </li>
                                 </ul>
                             </li>
                         @endcan
