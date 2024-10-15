@@ -29,8 +29,8 @@ class MyReportController extends Controller
         // ※general.phpで取得できる項目については、trans()メソッドを用いて取得
         $columnHeaderHash = [
             // テーブルカラム名 => Excelヘッダ名
-            'asset_tag' => trans('general.asset_tag'),
-            'name' => '資産名'
+            'a.name' => '資産名',
+            'l.name' => trans("general.license"),
         ];
         // 連想配列からカラム名（Key）のみを抽出して配列変数に格納
         $columns = array_keys($columnHeaderHash);
@@ -39,11 +39,16 @@ class MyReportController extends Controller
 
         // 実行するSQLを定義
         $columnsStr = implode(',', $columns);
-        $sql = "SELECT
-                    $columnsStr
-                FROM
-                    assets
-        ";
+        $sql = <<<SQL
+                    select
+                        $columnsStr
+                    from
+                        assets a
+                    left join license_seats ls on
+                        a.id = ls.asset_id
+                    left join licenses l on
+                        ls.license_id = l.id
+        SQL;
 
         // Excelエクスポート用オブジェクトを定義
         $sqlExportObj = new SqlExport(
@@ -55,3 +60,4 @@ class MyReportController extends Controller
         return Excel::download($sqlExportObj, 'assets.xlsx');
     }
 }
+

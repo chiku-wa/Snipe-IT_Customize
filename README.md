@@ -165,6 +165,7 @@ Route::group(['middleware' => ['auth']], function () {
 ```
 
 上記を追記したら、以下のアドレスにアクセスする。
+
 http://<IPアドレス>/MyReport/assets_and_licences_report
 
 ## 参考：レポートのカスタマイズ方法
@@ -192,3 +193,119 @@ app/Http/Controllers/MyReportController.php
         ";
 
 ```
+
+# サイドバーに新たに自作のカスタムレポート画面へのリンクを作成する
+
+「[[/任意のSQLを実行してExcelダウンロードさせるプログラムの作成]]」で作成したコントローラに新たに`index`アクションを追加し、Snipe-ITのサイドバーにリンクを追加してアクセスできるようにする。
+
+## ①コントローラ、ルーティング作成
+まずコントローラにアクションを追加し、ルーティングを追加する。
+
+app/Http/Controllers/MyReportController.php
+```php
+・・・
+    /**
+     * カスタムレポートのダウンロード一覧画面を表示するアクションメソッド
+     */
+    public function index()
+    {
+        return view('MyReport.index');
+    }
+・・・
+```
+
+routes/web.php
+```php
+・・・
+    Route::get('/MyReport', [MyReportController::class, 'index']);
+・・・
+```
+
+また、後述のビューに埋め込むリンクで使用するため、レポートダウンロード用のルーティングに名前をつける。
+routes/web.php
+```php
+・・・
+    // 資産情報とライセンスを並列で出力するレポートのダウロード用アクション
+    Route::get('/MyReport/assets_and_licences_report', [MyReportController::class, 'assets_and_licences_report'])
+        ->name('myreport/assets_and_licences_report');　★ここの設定を追記する
+・・・
+```
+
+## ラベルの定義
+Snipe-ITでは、ラベルはあらかじめ所定のPHPに定義する必要がある。
+下記を追記する。
+
+resources/lang/ja-JP/general.php
+```php
+<?php
+
+return [
+・・・
+    // 自作のカスタムレポートのラベル
+    'my_report'        => 'カスタムレポート',
+・・・
+```
+
+上記で定義したラベルは下記で呼び出すことができる。
+```php
+{{ trans('general.my_report') }}
+```
+
+## カスタムレポートの一覧ビューの作成
+先ほど作成したコントローラへのリンクするビューを作成する。
+
+以下のビューを作成すること。
+resources/views/CustomReport/index.blade.php
+```php
+@extends('layouts/default')
+
+{{-- Page title --}}
+@section('title')
+{{ trans('general.my_report') }}
+@parent
+@stop
+
+{{-- Page content --}}
+@section('content')
+
+<div class="text-center col-md-12" style="padding-top: 10px;">
+  <a href="{{ route('myreport/assets_and_licences_report') }}" class="btn btn-primary btn-sm" style="width: 100%">
+    すべての資産情報とライセンスをまとめてExcelダウンロード
+  </a>
+</div>
+
+@stop
+
+@section('moar_scripts')
+@include ('partials.bootstrap-table')
+@stop
+```
+
+※`{{ route('myreport/assets_and_licences_report') }}`は、「[[/コントローラ、ルーティング作成]]」で記述したルーティングの名前（`->name`）に対応する。
+
+- - -
+**~■ポイント~**
+そのままシンプルなHTMLを記述してしまうと、Snipe-ITのヘッダやフッタなどが表示されず、CSSも適用されないため、必ず下記の記述は漏れなく組み込んだうえでビューを作成すること。
+```php
+@extends('layouts/default')
+
+{{-- Page title --}}
+@section('title')
+ ★★★任意のヘッダタイトル★★★
+@parent
+@stop
+
+{{-- Page content --}}
+@section('content')
+
+★★★任意のHTMLを記述★★★
+
+@stop
+
+@section('moar_scripts')
+@include ('partials.bootstrap-table')
+@stop
+```
+- - -
+
+次にSnipe-ITに標準で実装されているサイドバーのリンクメニューに、
