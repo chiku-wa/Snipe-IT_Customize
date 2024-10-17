@@ -91,6 +91,7 @@ php artisan make:controller MyReportController
 ```
 
 作成したコントローラを以下の通り修正する。
+
 ```php
 <?php
 
@@ -148,6 +149,7 @@ class MyReportController extends Controller
 下記ファイルを編集し、ルーティングを編集する。
 
 routes/web.php
+
 ```php
 <?php
 ・・・
@@ -172,6 +174,7 @@ http://<IPアドレス>/MyReport/assets_and_licences_report
 コントローラの以下の記述を修正すれば良い。
 
 app/Http/Controllers/MyReportController.php
+
 ```php
 ・・・
         $columnHeaderHash = [
@@ -198,10 +201,20 @@ app/Http/Controllers/MyReportController.php
 
 「[[/任意のSQLを実行してExcelダウンロードさせるプログラムの作成]]」で作成したコントローラに新たに`index`アクションを追加し、Snipe-ITのサイドバーにリンクを追加してアクセスできるようにする。
 
+流れ：
+
+```mermaid
+graph LR;
+    menu[Snipe-ITの標準メニュー<br>resources/views/layouts/default.blade.php] -->|メニューをクリック|custom_controller_index[自作のコントローラ/アクション<br/>MyReportController.index]-->custom_view[自作のView];
+    custom_view-->|ダウンロードリンクボタンをクリック|custom_controller_[MyReport.assets_and_licences_report]-->dl_excel[Excelダウンロード];
+
+```
+
 ## ①コントローラ、ルーティング作成
 まずコントローラにアクションを追加し、ルーティングを追加する。
 
 app/Http/Controllers/MyReportController.php
+
 ```php
 ・・・
     /**
@@ -215,6 +228,7 @@ app/Http/Controllers/MyReportController.php
 ```
 
 routes/web.php
+
 ```php
 ・・・
     Route::get('/MyReport', [MyReportController::class, 'index']);
@@ -222,7 +236,9 @@ routes/web.php
 ```
 
 また、後述のビューに埋め込むリンクで使用するため、レポートダウンロード用のルーティングに名前をつける。
+
 routes/web.php
+
 ```php
 ・・・
     // 資産情報とライセンスを並列で出力するレポートのダウロード用アクション
@@ -236,6 +252,7 @@ Snipe-ITでは、ラベルはあらかじめ所定のPHPに定義する必要が
 下記を追記する。
 
 resources/lang/ja-JP/general.php
+
 ```php
 <?php
 
@@ -252,6 +269,7 @@ return [
 ```
 
 ## カスタムレポートの一覧ビューの作成
+
 先ほど作成したコントローラへのリンクするビューを作成する。
 
 以下のビューを作成すること。
@@ -284,8 +302,11 @@ resources/views/CustomReport/index.blade.php
 ※`{{ route('myreport/assets_and_licences_report') }}`は、「[[/コントローラ、ルーティング作成]]」で記述したルーティングの名前（`->name`）に対応する。
 
 - - -
-**~■ポイント~**
+
+**■ポイント**
+
 そのままシンプルなHTMLを記述してしまうと、Snipe-ITのヘッダやフッタなどが表示されず、CSSも適用されないため、必ず下記の記述は漏れなく組み込んだうえでビューを作成すること。
+
 ```php
 @extends('layouts/default')
 
