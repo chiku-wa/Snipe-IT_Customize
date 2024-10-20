@@ -782,6 +782,7 @@ dir="{{ Helper::determineLanguageDirection() }}">
                                             {{ trans('general.accessory_report') }}
                                         </a>
                                     </li>
+                                    <!-- 自作のカスタムレポートへの遷移させるためのリンクボタン -->
                                     <li>
                                         <a href="{{ url('MyReport/') }}" {{ (Request::is('myReport/index') ? ' class="active"' : '') }}>
                                             カスタムレポート
