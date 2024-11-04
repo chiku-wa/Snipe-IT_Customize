@@ -25,12 +25,6 @@ Snipe-ITにカスタムなレポート機能を追加し、任意のSQLを実行
 | アクション     | assets_and_licenses_report |
 
 
-## ①コントローラの作成
-
-```bash
-php artisan make:controller CustomAssetController
-```
-
 ## ②エクスポートクラスを作成する
 SQLを実行してExcel出力するために必要な、エクスポートクラスを作成する。
 以下のコマンドを実行してクラスを作成する。
