@@ -1,5 +1,8 @@
 カスタマイズしたSnipe-ITを管理するためのリポジトリ。
 
+[TOC]
+
+
 # カスタムレポートの追加方法
 Snipe-ITにカスタムなレポート機能を追加し、任意のSQLを実行してExcelでダウンロードさせるまでの手順を記載する。
 
@@ -22,7 +25,12 @@ Snipe-ITにカスタムなレポート機能を追加し、任意のSQLを実行
 | アクション     | assets_and_licenses_report |
 
 
-## コントローラの作成
+## ①コントローラの作成
+
+```bash
+php artisan make:controller CustomAssetController
+```
+
 ## ②エクスポートクラスを作成する
 SQLを実行してExcel出力するために必要な、エクスポートクラスを作成する。
 以下のコマンドを実行してクラスを作成する。
@@ -247,7 +255,7 @@ routes/web.php
 ・・・
 ```
 
-## ラベルの定義
+## ②ラベルの定義
 Snipe-ITでは、ラベルはあらかじめ所定のPHPに定義する必要がある。
 下記を追記する。
 
@@ -268,7 +276,7 @@ return [
 {{ trans('general.my_report') }}
 ```
 
-## カスタムレポートの一覧ビューの作成
+## ③カスタムレポートの一覧ビューの作成
 
 先ほど作成したコントローラへのリンクするビューを作成する。
 
@@ -327,6 +335,5 @@ resources/views/CustomReport/index.blade.php
 @include ('partials.bootstrap-table')
 @stop
 ```
-- - -
 
 次にSnipe-ITに標準で実装されているサイドバーのリンクメニューに、
