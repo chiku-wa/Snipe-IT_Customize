@@ -1,10 +1,26 @@
-カスタマイズしたSnipe-ITを管理するためのリポジトリ。
+# 目次
 
 [TOC]
 
+# はじめに
 
-# カスタムレポートの追加方法
-Snipe-ITにカスタムなレポート機能を追加し、任意のSQLを実行してExcelでダウンロードさせるまでの手順を記載する。
+OSS製品であるSnipe-ITの機能改修に関する手順をここにまとめる。
+なお、Snipe-IT`v7.0.13-pre`を前提としている。
+
+# 任意のSQLを実行してExcelダウンロードさせる機能を実装する
+
+任意のSQLを実行し、その結果をExcelでダウンロードできる機能を実装する手順を記載する。
+
+## 実装後の画面イメージ
+
+1. 左のサイドバーのレポート一覧に`カスタムレポート`リンクが追加される。
+
+    <img src="images//README/image-1.png" width="20%">
+
+2. リンクをクリックすると、カスタムレポートの一覧画面に遷移し、リンクをクリックするとExcelダウンロードが始まる。
+    <img src="images/README/image-3.png" width="70%">
+    ↓
+    <img src="images/README/image-4.png" width="50%">
 
 ## ①前提
 ### 必要なComposerライブラリ
@@ -203,13 +219,15 @@ app/Http/Controllers/MyReportController.php
 
 「[[/任意のSQLを実行してExcelダウンロードさせるプログラムの作成]]」で作成したコントローラに新たに`index`アクションを追加し、Snipe-ITのサイドバーにリンクを追加してアクセスできるようにする。
 
-流れ：
+## フローチャート
 
 ```mermaid
-graph LR;
+graph TD;
+    %% 自作Viewへの導線
     menu[Snipe-ITの標準メニュー<br>resources/views/layouts/default.blade.php] -->|メニューをクリック|custom_controller_index[自作のコントローラ/アクション<br/>MyReportController.index]-->custom_view[自作のView];
-    custom_view-->|ダウンロードリンクボタンをクリック|custom_controller_[MyReport.assets_and_licences_report]-->dl_excel[Excelダウンロード];
 
+    %%  自作ViewからExcelダウンロードへの導線
+    custom_view-->|ダウンロードリンクボタンをクリック|custom_controller_[MyReport.assets_and_licences_report]-->dl_excel[Excelダウンロード];
 ```
 
 ## ①コントローラ、ルーティング作成
@@ -303,9 +321,9 @@ resources/views/CustomReport/index.blade.php
 
 ※`{{ route('myreport/assets_and_licences_report') }}`は、「[[/コントローラ、ルーティング作成]]」で記述したルーティングの名前（`->name`）に対応する。
 
-- - -
+# 補足
 
-**■ポイント**
+## Viewデザインを維持したまま拡張する歳のポイント
 
 そのままシンプルなHTMLを記述してしまうと、Snipe-ITのヘッダやフッタなどが表示されず、CSSも適用されないため、必ず下記の記述は漏れなく組み込んだうえでビューを作成すること。
 
@@ -331,3 +349,4 @@ resources/views/CustomReport/index.blade.php
 ```
 
 次にSnipe-ITに標準で実装されているサイドバーのリンクメニューに、
+
