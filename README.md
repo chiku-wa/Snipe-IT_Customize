@@ -18,6 +18,7 @@ OSS製品であるSnipe-ITの機能改修に関する手順をここにまとめ
     <img src="images//README/image-1.png" width="20%">
 
 2. リンクをクリックすると、カスタムレポートの一覧画面に遷移し、リンクをクリックするとExcelダウンロードが始まる。
+
     <img src="images/README/image-3.png" width="70%">
 
     ↓
