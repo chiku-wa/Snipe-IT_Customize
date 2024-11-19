@@ -309,6 +309,69 @@ resources/views/CustomReport/index.blade.php
 
 ※`{{ route('myreport/assets_and_licences_report') }}`は、「[[/コントローラ、ルーティング作成]]」で記述したルーティングの名前（`->name`）に対応する。
 
+# 資産情報の標準項目を非表示にする
+
+## プログラムの構成
+
+Snipe-ITで標準で存在する項目を画面上から非表示にしたい場合の手順を示す。
+
+前提として、Snipe-ITでは下記の構成で画面項目を表示している。
+
+[イメージ]
+
+```mermaid
+graph BT;
+    partials["resources/views/partials/forms/edit/<u>**XXX**</u>.blade.php"]-->|"@include('partials.forms.edit.<u>**XXX**</u>'〜"|createEditPage[資産の作成、編集画面<br>resources/views/hardware/edit.blade.php<br />※作成、編集画面双方で「edit.blade.php」を共通で使用];
+
+    click partials href "https://example.com/comment1" "処理1の詳細を参照"
+
+```
+
+## 具体的な修正手順
+
+ここでは資産情報の`シリアル`を非表示にする方法を記載する。
+
+![alt text](images/README/image.png)
+
+以下のファイルを変更する。
+
+resources/views/partials/forms/edit/serial.blade.php
+
+before:
+```html
+<!-- Serial -->
+<div class="form-group {{ $errors->has('serial') ? ' has-error' : '' }}">
+    <label for="{{ $fieldname }}" class="col-md-3 control-label">{{ trans('admin/hardware/form.serial') }} </label>
+    <div class="col-md-7 col-sm-12{{  (Helper::checkIfRequired($item, 'serial')) ? ' required' : '' }}">
+        <input class="form-control" type="text" name="{{ $fieldname }}" id="{{ $fieldname }}" value="{{ old((isset($old_val_name) ? $old_val_name : $fieldname), $item->serial) }}" />
+        {!! $errors->first('serial', '<span class="alert-msg" aria-hidden="true"><i class="fas fa-times" aria-hidden="true"></i> :message</span>') !!}
+    </div>
+</div>
+```
+
+after:
+```html
+<!-- Serial -->
+{{-- ↓ここから↓
+
+<div class="form-group {{ $errors->has('serial') ? ' has-error' : '' }}">
+    <label for="{{ $fieldname }}" class="col-md-3 control-label">{{ trans('admin/hardware/form.serial') }} </label>
+    <div class="col-md-7 col-sm-12{{  (Helper::checkIfRequired($item, 'serial')) ? ' required' : '' }}">
+
+↑ここまでコメントアウト↑--}}
+
+{{-- 「type="text"→「type="hidden"」に変更 --}}
+        <input class="form-control" type="hidden" name="{{ $fieldname }}" id="{{ $fieldname }}" value="{{ old((isset($old_val_name) ? $old_val_name : $fieldname), $item->serial) }}" />
+
+{{-- ↓ここから↓
+            {!! $errors->first('serial', '<span class="alert-msg" aria-hidden="true"><i class="fas fa-times" aria-hidden="true"></i> :message</span>') !!}
+    </div>
+</div>
+↑ここまでコメントアウト↑--}}
+```
+
+★`input`はコメントアウトしないこと。例え空欄の情報であっても、サーバにパラメータを送信しなければエラーを引き起こす。
+
 # 参考
 
 ## Snipe-ITのデザインを踏襲して新たなViewを作成する場合のポイント
