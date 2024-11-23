@@ -166,20 +166,22 @@ class MyReportController extends Controller
 
         // 実行するSQLを定義
         $columnsStr = implode(',', $columns);
-        $sql = <<<SQL
-                    select
-                        $columnsStr
-                    from
-                        assets a
-                    left join license_seats ls on
-                        a.id = ls.asset_id
-                    left join licenses l on
-                        ls.license_id = l.id
-        SQL;
+        $sqlStr = DB::table('assets as a')
+            ->select($columns)
+            ->leftJoin(
+                'license_seats as ls'
+                , 'a.id', '=', 'ls.asset_id'
+            )
+            ->leftJoin(
+                'licenses as l'
+                , 'ls.license_id', '=', 'l.id'
+            )
+            ->toSql()
+        ;
 
         // Excelエクスポート用オブジェクトを定義
         $sqlExportObj = new SqlExport(
-            $sql,
+            $sqlStr,
             $headers
         );
 
