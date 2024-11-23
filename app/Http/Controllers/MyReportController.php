@@ -5,10 +5,15 @@ namespace App\Http\Controllers;
 // DBアクセスに必要なライブラリ
 use App\Exports\SqlExport;
 
-// SQLで実行したデータセットをExcelでダウンロードさせるために必要なライブラリ
-use Illuminate\Support\Facades\DB;
+// SQLクエリ（テーブル名）を作成する際に使用する各種モデルクラス
+use App\models\Asset;
+use App\models\License;
+use App\Models\LicenseSeat;
 
 // SQLのクエリビルダを使用するためのライブラリ
+use Illuminate\Support\Facades\DB;
+
+// SQLで実行したデータセットをExcelでダウンロードさせるために必要なライブラリ
 use Maatwebsite\Excel\Facades\Excel;
 
 class MyReportController extends Controller
@@ -26,13 +31,19 @@ class MyReportController extends Controller
      */
     public function assets_and_licences_report()
     {
+        // SQLで使用する各種テーブル名を、モデルクラスから抽出する
+        // ※文字列内でテーブル名を直書きしないようにするため
+        $tableNameAsset = (new Asset())->getTable();
+        $tableNameLicense = (new License())->getTable();
+        $tableNameLicenseSeat = (new LicenseSeat())->getTable();
+
         // テーブルのカラム名と、Excelに出力するヘッダ名の対応配列変数を定義
         // ※general.phpで機械的に抽出できない日本語名があるため（資産名など）、明示的に定義
         // ※general.phpで取得できる項目については、trans()メソッドを用いて取得
         $columnHeaderHash = [
             // テーブルカラム名 => Excelヘッダ名
-            'a.name' => '資産名',
-            'l.name' => trans("general.license"),
+            "{$tableNameAsset}.name" => (trans('general.asset') . "名"),
+            "{$tableNameLicense}.name" => trans('general.license'),
         ];
         // 連想配列からカラム名（Key）のみを抽出して配列変数に格納
         $columns = array_keys($columnHeaderHash);
@@ -40,15 +51,15 @@ class MyReportController extends Controller
         $headers = array_values($columnHeaderHash);
 
         //クエリビルダでSQLを生成し、文字列に変換して変数に格納する
-        $sqlStr = DB::table('assets as a')
+        $sqlStr = DB::table($tableNameAsset)
             ->select($columns)
             ->leftJoin(
-                'license_seats as ls'
-                , 'a.id', '=', 'ls.asset_id'
+                $tableNameLicenseSeat
+                , "{$tableNameAsset}.id", '=', "{$tableNameLicenseSeat}.asset_id"
             )
             ->leftJoin(
-                'licenses as l'
-                , 'ls.license_id', '=', 'l.id'
+                $tableNameLicense
+                , "{$tableNameLicenseSeat}.license_id", '=', "{$tableNameLicense}.id"
             )
             ->toSql()
         ;
