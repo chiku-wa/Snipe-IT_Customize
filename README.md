@@ -192,7 +192,7 @@ class MyReportController extends Controller
         );
 
         // Excelファイルのダウンロードを実行
-        return Excel::download($sqlExportObj, 'assets.xlsx');
+        return Excel::download($sqlExportObj, '資産情報とライセンスの一覧.xlsx');
     }
 }
 ```
