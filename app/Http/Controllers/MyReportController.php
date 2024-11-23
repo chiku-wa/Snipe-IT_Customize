@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 // DBアクセスに必要なライブラリ
-use Illuminate\Support\Facades\DB;
+use App\Exports\SqlExport;
 
 // SQLで実行したデータセットをExcelでダウンロードさせるために必要なライブラリ
-use App\Exports\SqlExport;
+use Illuminate\Support\Facades\DB;
+
+// SQLのクエリビルダを使用するためのライブラリ
 use Maatwebsite\Excel\Facades\Excel;
 
 class MyReportController extends Controller
@@ -37,22 +39,23 @@ class MyReportController extends Controller
         // 連想配列からExcelヘッダ名（Value）のみを抽出して配列変数に格納
         $headers = array_values($columnHeaderHash);
 
-        // 実行するSQLを定義
-        $columnsStr = implode(',', $columns);
-        $sql = <<<SQL
-                    select
-                        $columnsStr
-                    from
-                        assets a
-                    left join license_seats ls on
-                        a.id = ls.asset_id
-                    left join licenses l on
-                        ls.license_id = l.id
-        SQL;
+        //クエリビルダでSQLを生成し、文字列に変換して変数に格納する
+        $sqlStr = DB::table('assets as a')
+            ->select($columns)
+            ->leftJoin(
+                'license_seats as ls'
+                , 'a.id', '=', 'ls.asset_id'
+            )
+            ->leftJoin(
+                'licenses as l'
+                , 'ls.license_id', '=', 'l.id'
+            )
+            ->toSql()
+        ;
 
         // Excelエクスポート用オブジェクトを定義
         $sqlExportObj = new SqlExport(
-            $sql,
+            $sqlStr,
             $headers
         );
 
@@ -60,4 +63,3 @@ class MyReportController extends Controller
         return Excel::download($sqlExportObj, 'assets.xlsx');
     }
 }
-
