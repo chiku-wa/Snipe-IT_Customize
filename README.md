@@ -344,8 +344,6 @@ graph BT;
 以下のファイルを変更する。
 
 resources/views/partials/forms/edit/serial.blade.php
-
-before:
 ```html
 <!-- Serial -->
 <div class="form-group {{ $errors->has('serial') ? ' has-error' : '' }}">
@@ -357,7 +355,8 @@ before:
 </div>
 ```
 
-after:
+↓
+
 ```html
 <!-- Serial -->
 {{-- ↓ここから↓
