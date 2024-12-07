@@ -71,10 +71,12 @@
                 {{ trans('general.category') }}
               </label>
 
+              {{-- ↓ここから↓
               <label class="form-control">
                 {{ Form::checkbox('serial', '1', '1') }}
                 {{ trans('admin/hardware/table.serial') }}
               </label>
+              ↑ここまでコメントアウト↑--}}
 
               <label class="form-control">
                 {{ Form::checkbox('purchase_date', '1', '1') }}

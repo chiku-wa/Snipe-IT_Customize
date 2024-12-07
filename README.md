@@ -419,6 +419,36 @@ app/Presenters/AssetPresenter.php
 ...
 ```
 
+## カスタムレポート画面から非表示にする
+
+カスタムレポートで指定する項目を非表示にする。
+
+![alt text](image.png)
+
+修正箇所は以下の通り。
+
+resources/views/reports/custom.blade.php
+
+```html
+・・・
+              <label class="form-control">
+                {{ Form::checkbox('category', '1', '1') }}
+                {{ trans('general.category') }}
+              </label>
+
+              {{-- ↓ここから↓
+              <label class="form-control">
+                {{ Form::checkbox('serial', '1', '1') }}
+                {{ trans('admin/hardware/table.serial') }}
+              </label>
+              ↑ここまでコメントアウト↑--}}
+
+              <label class="form-control">
+                {{ Form::checkbox('purchase_date', '1', '1') }}
+                {{ trans('admin/licenses/table.purchase_date') }}
+              </label>
+・・・
+```
 
 # 参考
 
