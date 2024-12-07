@@ -59,14 +59,17 @@ class AssetPresenter extends Presenter
                 'title' => trans('admin/hardware/table.asset_tag'),
                 'visible' => true,
                 'formatter' => 'hardwareLinkFormatter',
-            ], [
+            ],
+             /* 一覧画面の「シリアル」のヘッダを非表示にする
+            [
                 'field' => 'serial',
                 'searchable' => true,
                 'sortable' => true,
                 'title' => trans('admin/hardware/form.serial'),
                 'visible' => true,
                 'formatter' => 'hardwareLinkFormatter',
-            ],  [
+            ],
+            */  [
                 'field' => 'model',
                 'searchable' => true,
                 'sortable' => true,

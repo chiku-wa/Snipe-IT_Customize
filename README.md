@@ -319,7 +319,9 @@ resources/views/CustomReport/index.blade.php
 
 # 資産情報の標準項目を非表示にする
 
-## プログラムの構成
+## 新規作成/編集画面の項目を非表示にする
+
+### プログラムの構成
 
 Snipe-ITで標準で存在する項目を画面上から非表示にしたい場合の手順を示す。
 
@@ -335,7 +337,7 @@ graph BT;
 
 ```
 
-## 具体的な修正手順
+### 具体的な修正手順
 
 ここでは資産情報の`シリアル`を非表示にする方法を記載する。
 
@@ -378,6 +380,45 @@ resources/views/partials/forms/edit/serial.blade.php
 ```
 
 ★`input`はコメントアウトしないこと。例え空欄の情報であっても、サーバにパラメータを送信しなければエラーを引き起こす。
+
+## レポートの一覧画面から非表示にする
+
+### プログラムの構成
+
+まず、レポートの一覧画面は以下の構成になっている。
+
+```mermaid
+graph TD;
+    report[レポートの一覧画面<br>resources/views/hardware/index.blade.php] -->|"tableタグ内の「data-columns={{ \\App\\Presenters\\AssetPresenter::dataTableLayout() }}"」でPHPプログラム呼び出し| presenter["資産のプレゼンタープログラム<br>app/Presenters/AssetPresenter.php<br>※「dataTableLayout()」メソッド内に定義されている各項目の列情報を読み込む"];
+```
+
+### 具体的な修正手順
+
+下記の通りコメントアウトすれば良い。
+app/Presenters/AssetPresenter.php
+```php
+...
+                'sortable' => true,
+                'switchable' => false,
+                'title' => trans('admin/hardware/table.asset_tag'),
+                'visible' => true,
+                'formatter' => 'hardwareLinkFormatter',
+            ],
+             /* 一覧画面の「シリアル」のヘッダを非表示にする
+            [
+                'field' => 'serial',
+                'searchable' => true,
+                'sortable' => true,
+                'title' => trans('admin/hardware/form.serial'),
+                'visible' => true,
+                'formatter' => 'hardwareLinkFormatter',
+            ],
+            */  [
+                'field' => 'model',
+                'searchable' => true,
+...
+```
+
 
 # 参考
 
