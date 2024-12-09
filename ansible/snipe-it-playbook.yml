@@ -1,0 +1,104 @@
+# hostsに定義したグループ名を記載する
+- name: Snipe-ITを構築するためのプレイブック
+  hosts: snipe_it
+
+  # ===== プレイブックで使用する、各種アカウントのユーザ名、パスワードが定義されたYAMLファイルを読み込む
+  vars_files:
+    - ./ansible_settings.yml
+
+  # ===== リモートホストでsudoで実行するかどうか
+  # sudoしない（root接続することが前提のため）
+  become: false
+
+  # ===== 実行するタスク（コマンド）を定義
+  tasks:
+    # ----- MySQL
+    # [MySQLのインストール、起動、自動起動設定]
+    - name: MySQLをインストールする
+      ansible.builtin.dnf:
+        # バージョンを指定する
+        name: mysql-server-8.0.36-1.el9_3
+        # すでにインストール済みの場合はスキップする
+        state: present
+    - name: MySQLを起動し、自動起動設定を行う
+      ansible.builtin.service:
+        name: mysqld
+        state: started # サービスを起動
+        enabled: true # 自動起動設定を有効
+
+    # [「mysql_secure_installation」に相当する処理を行う]
+    - name: 前提となるパッケージを導入する（A MySQL module is required:〜Python 3.X mysqlclient or PyMySQL. エラー回避のため）
+      ansible.builtin.dnf:
+        name: python3-PyMySQL
+        # すでにインストール済みの場合はスキップする
+        state: present
+
+    - name: 「root」ユーザのパスワードを設定する
+      community.mysql.mysql_user:
+        # パスワード認証なしでログインを試みる（初回はrootパスワードが設定されいないため）
+        check_implicit_admin: true
+        # コマンドを実行する際に接続するユーザ名、パスワード
+        login_user: root
+        login_password: "{{ mysql.accounts.root_user.password }}"
+        # パスワードを変更したいユーザと、設定したいパスワード
+        name: root
+        password: "{{ mysql.accounts.root_user.password }}"
+        # すでにパスワード変更済みの場合はプレイブックの処理はスキップする
+        state: present
+
+    - name: 匿名ユーザを削除する
+      community.mysql.mysql_user:
+        # コマンドを実行する際に接続するユーザ名、パスワード
+        login_user: root
+        login_password: "{{ mysql.accounts.root_user.password }}"
+        # 全ホストで匿名ユーザを削除する（state: absentは）
+        name: "" # 匿名ユーザ
+        host_all: true # 全ホスト
+        state: absent # ユーザ削除
+
+    - name: テスト用データベースの削除
+      community.mysql.mysql_db:
+        # コマンドを実行する際に接続するユーザ名、パスワード
+        login_user: root
+        login_password: "{{ mysql.accounts.root_user.password }}"
+        # 削除したいデータベース名
+        name: test
+        # 削除する
+        state: absent
+
+    # [DB、ユーザ作成を行う]
+    - name: データベースの作成
+      community.mysql.mysql_db:
+        # コマンドを実行する際に接続するユーザ名、パスワード
+        login_user: root
+        login_password: "{{ mysql.accounts.root_user.password }}"
+        # データベースを作成する
+        name: "{{ mysql.database.name }}" # データベース名
+        encoding: "{{ mysql.database.encoding }}" # データベースのエンコーディング
+        state: present # すでにデータベースが存在している場合はスキップ
+
+    - name: ユーザの作成
+      community.mysql.mysql_user:
+        # コマンドを実行する際に接続するユーザ名、パスワード
+        login_user: root
+        login_password: "{{ mysql.accounts.root_user.password }}"
+        # ユーザを作成する
+        name: "{{ mysql.accounts.snipe_it.username }}"
+        password: "{{ mysql.accounts.snipe_it.password }}"
+        # 下記コマンド相当の権限付与を行う
+        # GRANT ALL PRIVILEGES ON <データベース>.* TO '<ユーザ名>'@'%';
+        host: '%' # すべてのホストからのアクセスを許可
+        priv: "{{ mysql.database.name }}.*:ALL" # 先ほど作成したデータベースへのすべての権限を付与
+        state: present # すでにユーザが存在している場合はスキップ
+
+    # [外部からMySQLに接続できるようにするための設定]
+    - name: ファイアウォール開放
+      ansible.posix.firewalld:
+        # MySQLのポートを開放する
+        service: mysql
+        # ポート開放を有効化する
+        state: enabled
+        # 設定を永続化する
+        permanent: true
+        # 即時反映する
+        immediate: true
