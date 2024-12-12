@@ -102,3 +102,21 @@
         permanent: true
         # 即時反映する
         immediate: true
+
+    - name: 設定ファイルにアクセスを許可するIP設定を追加する
+      ansible.builtin.lineinfile:
+        path: /etc/my.cnf.d/mysql-server.cnf
+        # 「bind-address」設定がまだ存在しない場合は設定を追記し、存在する場合は置き換える
+        regexp: '^bind-address\s*='
+        line: 'bind-address = 0.0.0.0'
+        state: present # regexpで指定した行が存在する場合は置き換える
+      # 設定ファイル変更後は、Ansibleのハンドラを呼び出してMySQLのサービス再起動を行う
+      notify: MySQL再起動
+
+  # ===== ハンドラ（taksから呼び出される各種コマンド）を定義
+  handlers:
+    # MySQLのサービスを再起動するハンドラ
+    - name: MySQL再起動
+      ansible.builtin.service:
+        name: mysqld
+        state: restarted
