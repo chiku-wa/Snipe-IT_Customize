@@ -6,6 +6,14 @@
   vars_files:
     - ./ansible_settings.yml
 
+  # ===== 各種変数を定義
+  vars:
+    # ----- Composer関連
+    # 外部からダウンロードしたインストーラのファイルパス
+    composer_installer_save_path: "/tmp/composer-setup.php"
+    # Composerの実行ファイルのディレクトリ
+    composer_exec_dir: "/usr/local/bin"
+
   # ===== リモートホストでsudoで実行するかどうか
   # sudoしない（root接続することが前提のため）
   become: false
@@ -13,7 +21,7 @@
   # ===== 実行するタスク（コマンド）を定義
   tasks:
     # ----- MySQL
-    # [MySQLのインストール、起動、自動起動設定]
+    # [インストール、起動、自動起動設定]
     - name: MySQLをインストールする
       ansible.builtin.dnf:
         # バージョンを指定する
@@ -92,9 +100,9 @@
         state: present # すでにユーザが存在している場合はスキップ
 
     # [外部からMySQLに接続できるようにするための設定]
-    - name: ファイアウォール開放
+    - name: MySQL用のファイアウォール開放
       ansible.posix.firewalld:
-        # MySQLのポートを開放する
+        # ポートを開放する
         service: mysql
         # ポート開放を有効化する
         state: enabled
@@ -110,8 +118,83 @@
         regexp: '^bind-address\s*='
         line: 'bind-address = 0.0.0.0'
         state: present # regexpで指定した行が存在する場合は置き換える
-      # 設定ファイル変更後は、Ansibleのハンドラを呼び出してMySQLのサービス再起動を行う
+      # [ハンドラ呼び出し]設定ファイル変更後は、Ansibleのハンドラを呼び出してMySQLのサービス再起動を行う
       notify: MySQL再起動
+
+    # ----- Apache
+    # [インストール、起動、自動起動設定]
+    - name: Apacheをインストールする
+      ansible.builtin.dnf:
+        # バージョンを指定する
+        name: httpd-2.4.57-11.el9_4.1
+        # すでにインストール済みの場合はスキップする
+        state: present
+    - name: Apacheを起動し、自動起動設定を行う
+      ansible.builtin.service:
+        name: httpd
+        state: started # サービスを起動
+        enabled: true # 自動起動設定を有効
+    # [外部からApacheに接続できるようにするための設定]
+    - name: Apache用のファイアウォール開放
+      ansible.posix.firewalld:
+        # ポートを開放する
+        port: "{{ item }}/tcp"
+        # ポート開放を有効化する
+        state: enabled
+        # 設定を永続化する
+        permanent: true
+        # 即時反映する
+        immediate: true
+      # 開放したいポート番号分だけ繰り返す（item変数に相当）
+      loop:
+        - 80
+        - 443
+
+    # ----- PHP
+    # [インストール、起動、自動起動設定]
+    - name: PHPをインストールする
+      ansible.builtin.dnf:
+        # バージョンを指定する
+        # PHP8.1はそのままでは導入できないため、モジュールの有効化（dnf module enable
+        # コマンド相当）の処理も行う。
+        name: "@php:8.1"
+        # すでにインストール済みの場合はスキップする
+        state: present
+    - name: 関連するPHPモジュールを導入する
+      ansible.builtin.dnf:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - "php-mysqlnd"
+        - "php-cli"
+        - "php-common"
+        - "php-json"
+        - "php-gd"
+        - "php-mbstring"
+        - "php-xml"
+        - "php-curl"
+        - "php-zip"
+        - "php-bcmath"
+
+    # ----- Composerの導入
+    - name: Composerのインストーラをダウンロードする
+      ansible.builtin.get_url:
+        url: https://getcomposer.org/installer
+        dest: "{{ composer_installer_save_path }}"
+        # パーミッションを明示する（curlや、php -r "copy(...)"でインストーラをDLした時と
+        # 同じになるようにする）
+        mode: '0644'
+
+    - name: Check if Composer is already installed
+      ansible.builtin.stat:
+        path: "{{ composer_exec_dir }}/composer"
+      register: composer_stat
+
+    - name: Composerをインストールする
+      ansible.builtin.command:
+        cmd: "php {{ composer_installer_save_path }}/composer-setup.php --install-dir={{ composer_exec_dir }} --filename=composer"
+        # Composerの実行ファイルが存在しない場合のみインストールする
+        creates: "{{ composer_exec_dir }}/composer"
 
   # ===== ハンドラ（taksから呼び出される各種コマンド）を定義
   handlers:
