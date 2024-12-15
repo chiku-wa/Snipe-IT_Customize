@@ -14,6 +14,11 @@
     # Composerの実行ファイルのディレクトリ
     composer_exec_dir: "/usr/local/bin"
 
+    # ----- Snipe-IT関連
+    # Snipe-ITのアプリケーションが存在するディレクトリ
+    snipe_it_app_dir: "/var/www/snipeit"
+    snipe_it_app_dir_owner: "apache"
+
   # ===== リモートホストでsudoで実行するかどうか
   # sudoしない（root接続することが前提のため）
   become: false
@@ -196,7 +201,44 @@
         # Composerの実行ファイルが存在しない場合のみインストールする
         creates: "{{ composer_exec_dir }}/composer"
 
-  # ===== ハンドラ（taksから呼び出される各種コマンド）を定義
+    # ----- Snipe-ITを導入する
+    - name: Snipe-ITのアプリケーションディレクトリを作成する
+      ansible.builtin.file:
+        path: "{{ snipe_it_app_dir }}"
+        # 存在しない場合のみディレクトリを作成
+        state: directory
+        # 所有者、グループにはApacheのユーザを指定する
+        owner: "{{ snipe_it_app_dir_owner }}"
+        group: "{{ snipe_it_app_dir_owner }}"
+        mode: "0755"
+    - name: 作成したSnipe-ITのアプリケーションディレクトリが、安全なディレクトリであることをGitに明示させる設定
+      community.general.git_config:
+        scope: global
+        name: safe.directory
+        value: "{{ snipe_it_app_dir }}"
+    - name: Snipe-ITをGitHubからクローンする
+      ansible.builtin.git:
+        repo: https://github.com/snipe/snipe-it.git
+        # Clone先を指定する
+        dest: "{{ snipe_it_app_dir }}"
+        # バージョン（Gitのタグ名）を指定する
+        version: v7.0.13
+        # もしローカルに既存のリポジトリが存在する場合は上書きする
+        force: true
+        # 既存リポジトリが存在する場合は更新する
+        update: true
+    - name: Snipe-ITのComposerをアップデートする
+      community.general.composer:
+        command: update
+        working_dir: "{{ snipe_it_app_dir }}"
+    - name: Snipe-ITの依存関係のあるパッケージを導入する
+      community.general.composer:
+        command: install
+        working_dir: "{{ snipe_it_app_dir }}"
+        # 開発用パッケージは除外し、Gitリポじトロなどのソースから取得する
+        arguments: "--no-dev --prefer-source"
+
+  # ===== ハンドラ（tasksから呼び出される各種コマンド）を定義
   handlers:
     # MySQLのサービスを再起動するハンドラ
     - name: MySQL再起動
