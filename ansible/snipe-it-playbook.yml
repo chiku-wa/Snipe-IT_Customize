@@ -17,6 +17,9 @@
     # ----- Snipe-IT関連
     # Snipe-ITのアプリケーションが存在するディレクトリ
     snipe_it_app_dir: "/var/www/snipeit"
+    # Snipe-ITのアプリケーションディレクトリに存在する、.envファイルのファイルパス
+    snipe_it_app_env: "{{ snipe_it_app_dir }}/.env"
+    # Snipe-ITのアプリケーションディレクトリに設定する所有者名
     snipe_it_app_dir_owner: "apache"
 
   # ===== リモートホストでsudoで実行するかどうか
@@ -197,7 +200,7 @@
 
     - name: Composerをインストールする
       ansible.builtin.command:
-        cmd: "php {{ composer_installer_save_path }}/composer-setup.php --install-dir={{ composer_exec_dir }} --filename=composer"
+        cmd: "php {{ composer_installer_save_path }} --install-dir={{ composer_exec_dir }} --filename=composer"
         # Composerの実行ファイルが存在しない場合のみインストールする
         creates: "{{ composer_exec_dir }}/composer"
 
@@ -237,7 +240,37 @@
         working_dir: "{{ snipe_it_app_dir }}"
         # 開発用パッケージは除外し、Gitリポじトロなどのソースから取得する
         arguments: "--no-dev --prefer-source"
-
+    # .envを作成する
+    - name: .env.exampleをコピーして.envを作成する
+      ansible.builtin.copy:
+        src: "{{ snipe_it_app_env }}.example"
+        dest: "{{ snipe_it_app_env }}"
+        # 管理対象ノード上のファイルをコピーする
+        remote_src: true
+        # すでに同じファイルが存在している場合も上書きする
+        force: true
+        # コピー元ファイル.env.exampleと同じパーミッションでコピーする
+        mode: "644"
+    - name: .env編集
+      ansible.builtin.lineinfile:
+        path: "{{ snipe_it_app_env }}"
+        # 正規表現に一致する行を指定
+        regexp: "{{ item.regexp }}"
+        # 置換したい文字列
+        line: "{{ item.line }}"
+        state: present
+      # 置換したい文字列と、置換後の文字列をループ処理で定義
+      loop:
+        # Snipe-ITにアクセスする際のHTTPのURLを設定する。IPには、Ansibleで接続している管理対象ノードのIPを指定する
+        - { regexp: "^APP_URL=", line: "APP_URL=http://{{ ansible_default_ipv4.address }}"}
+        # タイムゾーンに日本語を指定する。
+        - { regexp: "^APP_ZONE=", line: "APP_ZONE='Asia/Tokyo'"}
+        # 言語を指定する。
+        - { regexp: "^APP_LOCALE=", line: "APP_LOCALE='ja-JP'"}
+        # DB情報を指定する。
+        - { regexp: "^DB_DATABASE=", line: "DB_DATABASE='{{ mysql.database.name }}'"}
+        - { regexp: "^DB_USERNAME=", line: "DB_USERNAME='{{ mysql.accounts.snipe_it.username }}'"}
+        - { regexp: "^DB_PASSWORD=", line: "DB_PASSWORD='{{ mysql.accounts.snipe_it.password }}'"}
   # ===== ハンドラ（tasksから呼び出される各種コマンド）を定義
   handlers:
     # MySQLのサービスを再起動するハンドラ
