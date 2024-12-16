@@ -103,7 +103,7 @@
         password: "{{ mysql.accounts.snipe_it.password }}"
         # 下記コマンド相当の権限付与を行う
         # GRANT ALL PRIVILEGES ON <データベース>.* TO '<ユーザ名>'@'%';
-        host: '%' # すべてのホストからのアクセスを許可
+        host: "%" # すべてのホストからのアクセスを許可
         priv: "{{ mysql.database.name }}.*:ALL" # 先ほど作成したデータベースへのすべての権限を付与
         state: present # すでにユーザが存在している場合はスキップ
 
@@ -124,7 +124,7 @@
         path: /etc/my.cnf.d/mysql-server.cnf
         # 「bind-address」設定がまだ存在しない場合は設定を追記し、存在する場合は置き換える
         regexp: '^bind-address\s*='
-        line: 'bind-address = 0.0.0.0'
+        line: "bind-address = 0.0.0.0"
         state: present # regexpで指定した行が存在する場合は置き換える
       # [ハンドラ呼び出し]設定ファイル変更後は、Ansibleのハンドラを呼び出してMySQLのサービス再起動を行う
       notify: MySQL再起動
@@ -191,7 +191,7 @@
         dest: "{{ composer_installer_save_path }}"
         # パーミッションを明示する（curlや、php -r "copy(...)"でインストーラをDLした時と
         # 同じになるようにする）
-        mode: '0644'
+        mode: "0644"
 
     - name: Check if Composer is already installed
       ansible.builtin.stat:
@@ -214,7 +214,7 @@
         owner: "{{ snipe_it_app_dir_owner }}"
         group: "{{ snipe_it_app_dir_owner }}"
         mode: "0755"
-    - name: 作成したSnipe-ITのアプリケーションディレクトリが、安全なディレクトリであることをGitに明示させる設定
+    - name: 作成したSnipe-ITのアプリケーションディレクトリが、安全なディレクトリであることをGitに明示させる設定（safe.directory）
       community.general.git_config:
         scope: global
         name: safe.directory
@@ -262,15 +262,33 @@
       # 置換したい文字列と、置換後の文字列をループ処理で定義
       loop:
         # Snipe-ITにアクセスする際のHTTPのURLを設定する。IPには、Ansibleで接続している管理対象ノードのIPを指定する
-        - { regexp: "^APP_URL=", line: "APP_URL=http://{{ ansible_default_ipv4.address }}"}
+        - {
+            regexp: "^APP_URL=",
+            line: "APP_URL=http://{{ ansible_default_ipv4.address }}",
+          }
         # タイムゾーンに日本語を指定する。
-        - { regexp: "^APP_ZONE=", line: "APP_ZONE='Asia/Tokyo'"}
+        - { regexp: "^APP_ZONE=", line: "APP_ZONE='Asia/Tokyo'" }
         # 言語を指定する。
-        - { regexp: "^APP_LOCALE=", line: "APP_LOCALE='ja-JP'"}
+        - { regexp: "^APP_LOCALE=", line: "APP_LOCALE='ja-JP'" }
         # DB情報を指定する。
-        - { regexp: "^DB_DATABASE=", line: "DB_DATABASE='{{ mysql.database.name }}'"}
-        - { regexp: "^DB_USERNAME=", line: "DB_USERNAME='{{ mysql.accounts.snipe_it.username }}'"}
-        - { regexp: "^DB_PASSWORD=", line: "DB_PASSWORD='{{ mysql.accounts.snipe_it.password }}'"}
+        - {
+            regexp: "^DB_DATABASE=",
+            line: "DB_DATABASE='{{ mysql.database.name }}'",
+          }
+        - {
+            regexp: "^DB_USERNAME=",
+            line: "DB_USERNAME='{{ mysql.accounts.snipe_it.username }}'",
+          }
+        - {
+            regexp: "^DB_PASSWORD=",
+            line: "DB_PASSWORD='{{ mysql.accounts.snipe_it.password }}'",
+          }
+    - name: アプリケーションキー（APP_KEY）を生成する
+      ansible.builtin.command:
+        # 対話形式の「Are you sure you want to run this command?」を表示させないようにforceオプションをつけて実行する
+        cmd: php artisan key:generate --force
+        chdir: "{{ snipe_it_app_dir }}"
+
   # ===== ハンドラ（tasksから呼び出される各種コマンド）を定義
   handlers:
     # MySQLのサービスを再起動するハンドラ
