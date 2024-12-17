@@ -262,32 +262,36 @@
       # 置換したい文字列と、置換後の文字列をループ処理で定義
       loop:
         # Snipe-ITにアクセスする際のHTTPのURLを設定する。IPには、Ansibleで接続している管理対象ノードのIPを指定する
-        - {
-            regexp: "^APP_URL=",
-            line: "APP_URL=http://{{ ansible_default_ipv4.address }}",
-          }
+        - { regexp: "^APP_URL=", line: "APP_URL=http://{{ ansible_default_ipv4.address }}" }
         # タイムゾーンに日本語を指定する。
         - { regexp: "^APP_ZONE=", line: "APP_ZONE='Asia/Tokyo'" }
         # 言語を指定する。
         - { regexp: "^APP_LOCALE=", line: "APP_LOCALE='ja-JP'" }
         # DB情報を指定する。
-        - {
-            regexp: "^DB_DATABASE=",
-            line: "DB_DATABASE='{{ mysql.database.name }}'",
-          }
-        - {
-            regexp: "^DB_USERNAME=",
-            line: "DB_USERNAME='{{ mysql.accounts.snipe_it.username }}'",
-          }
-        - {
-            regexp: "^DB_PASSWORD=",
-            line: "DB_PASSWORD='{{ mysql.accounts.snipe_it.password }}'",
-          }
-    - name: アプリケーションキー（APP_KEY）を生成する
+        - { regexp: "^DB_DATABASE=", line: "DB_DATABASE='{{ mysql.database.name }}'" }
+        - { regexp: "^DB_USERNAME=", line: "DB_USERNAME='{{ mysql.accounts.snipe_it.username }}'" }
+        - { regexp: "^DB_PASSWORD=", line: "DB_PASSWORD='{{ mysql.accounts.snipe_it.password }}'"}
+    - name: .env内のAPP_KEYがまだ生成されていない状態かどうか(APP_KEY=ChangeMeのままになっているか)確認する
+      # grepコマンドの実行結果を変数に格納する
+      ansible.builtin.command:
+        chdir: "{{ snipe_it_app_dir }}"
+        cmd: "grep '^APP_KEY=ChangeMe' {{ snipe_it_app_env }}"
+      register: is_not_generate_app_key
+      # grepコマンド実行のみで冪等性が担保されているため、lintエラー回避のために下記を明記する。
+      changed_when: false
+      # 一致する行が見つからなかった場合も正常とみなすため、Ansibleエラー回避のために下記を明記する。
+      failed_when: false
+
+    - name: アプリケーションキー（APP_KEY）が生成されていないなら、aritisanコマンドで生成する
       ansible.builtin.command:
         # 対話形式の「Are you sure you want to run this command?」を表示させないようにforceオプションをつけて実行する
-        cmd: php artisan key:generate --force
         chdir: "{{ snipe_it_app_dir }}"
+        # Yes/No対話形式での確認画面をスキップするため、--forceオプションを付与してキーを生成する
+        cmd: php artisan key:generate --force
+      # APP_KEYが生成されていない場合のみ、artisanで生成を行う
+      when: is_not_generate_app_key.stdout != ""
+      # whenでAPP_KEYが生成されていないかどうか判定しており、冪等性が確保されているため、lintエラー回避のために下記を明記する。
+      changed_when: false
 
   # ===== ハンドラ（tasksから呼び出される各種コマンド）を定義
   handlers:
