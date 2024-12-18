@@ -18,9 +18,15 @@
     # Snipe-ITのアプリケーションが存在するディレクトリ
     snipe_it_app_dir: "/var/www/snipeit"
     # Snipe-ITのアプリケーションディレクトリに存在する、.envファイルのファイルパス
-    snipe_it_app_env: "{{ snipe_it_app_dir }}/.env"
+    snipe_it_app_env_path: "{{ snipe_it_app_dir }}/.env"
     # Snipe-ITのアプリケーションディレクトリに設定する所有者名
     snipe_it_app_dir_owner: "apache"
+    # Apacheの仮想ホストファイル設定
+    snipe_it_apache_conf_path: /etc/httpd/conf.d/snipeit.conf
+    # Apacheのエラーログの出力先ファイルパス
+    snipe_it_apache_error_log: /var/log/httpd/snipeit_error.log
+    # Apacheのアクセスログの出力先ファイルパス
+    snipe_it_apache_access_log: /var/log/httpd/snipeit_access.log
 
   # ===== リモートホストでsudoで実行するかどうか
   # sudoしない（root接続することが前提のため）
@@ -243,8 +249,8 @@
     # .envを作成する
     - name: .env.exampleをコピーして.envを作成する
       ansible.builtin.copy:
-        src: "{{ snipe_it_app_env }}.example"
-        dest: "{{ snipe_it_app_env }}"
+        src: "{{ snipe_it_app_env_path }}.example"
+        dest: "{{ snipe_it_app_env_path }}"
         # 管理対象ノード上のファイルをコピーする
         remote_src: true
         # すでに同じファイルが存在している場合も上書きする
@@ -253,7 +259,7 @@
         mode: "644"
     - name: .env編集
       ansible.builtin.lineinfile:
-        path: "{{ snipe_it_app_env }}"
+        path: "{{ snipe_it_app_env_path }}"
         # 正規表現に一致する行を指定
         regexp: "{{ item.regexp }}"
         # 置換したい文字列
@@ -265,7 +271,7 @@
         - { regexp: "^APP_URL=", line: "APP_URL=http://{{ ansible_default_ipv4.address }}" }
         # タイムゾーンに日本語を指定する。
         - { regexp: "^APP_ZONE=", line: "APP_ZONE='Asia/Tokyo'" }
-        # 言語を指定する。
+        # 日本語を指定する。
         - { regexp: "^APP_LOCALE=", line: "APP_LOCALE='ja-JP'" }
         # DB情報を指定する。
         - { regexp: "^DB_DATABASE=", line: "DB_DATABASE='{{ mysql.database.name }}'" }
@@ -275,7 +281,7 @@
       # grepコマンドの実行結果を変数に格納する
       ansible.builtin.command:
         chdir: "{{ snipe_it_app_dir }}"
-        cmd: "grep '^APP_KEY=ChangeMe' {{ snipe_it_app_env }}"
+        cmd: "grep '^APP_KEY=ChangeMe' {{ snipe_it_app_env_path }}"
       register: is_not_generate_app_key
       # grepコマンド実行のみで冪等性が担保されているため、lintエラー回避のために下記を明記する。
       changed_when: false
@@ -292,6 +298,34 @@
       when: is_not_generate_app_key.stdout != ""
       # whenでAPP_KEYが生成されていないかどうか判定しており、冪等性が確保されているため、lintエラー回避のために下記を明記する。
       changed_when: false
+
+    # ----- Apacheの仮想ホスト設定を行う
+    - name: Snipe-IT用のApacheの仮想ホスト設定ファイルを作成する
+      ansible.builtin.blockinfile:
+        # 作成するファイル
+        path: "{{ snipe_it_apache_conf_path }}"
+        # ファイルが存在しなければ作成する
+        create: true
+        mode: "644"
+        block: |
+          <VirtualHost *:80>
+              ServerName {{ ansible_default_ipv4.address }}
+              DocumentRoot {{ snipe_it_app_dir }}/public
+
+              <Directory {{ snipe_it_app_dir }}/public>
+                  Options Indexes FollowSymLinks
+                  AllowOverride All
+                  Require all granted
+              </Directory>
+
+              <FilesMatch "\.(env|htaccess|log|sh|config)$">
+                  Require all denied
+              </FilesMatch>
+
+              ErrorLog {{ snipe_it_apache_error_log }}
+              CustomLog {{ snipe_it_apache_access_log }} combined
+          </VirtualHost>
+
 
   # ===== ハンドラ（tasksから呼び出される各種コマンド）を定義
   handlers:
