@@ -355,6 +355,12 @@
       changed_when: false
       # あらかじめ定義した対象ディレクトリ全てに対して処理する
       loop: "{{ selinux_content_rw_dirs }}"
+    - name: SELinuxの設定を変更し、httpdがデータベースにアクセスできるようにする
+      ansible.posix.seboolean:
+        name: httpd_can_network_connect_db
+        state: true
+        # OS再起動後も保持されるようにする
+        persistent: true
 
   # ===== ハンドラ（tasksから呼び出される各種コマンド）を定義
   handlers:
