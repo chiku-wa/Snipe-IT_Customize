@@ -1,0 +1,12 @@
+# OSや各種ソフトウェアのユーザ情報を定義したファイル
+  # MySQL関連のユーザ情報
+  mysql:
+    accounts:
+        root_user:
+          password: <MySQLのrootユーザのパスワード>
+        snipe_it:
+          username: snipe_it_user
+          password: <MySQLのSnipe-IT用ユーザのパスワード>
+    database:
+      name: snipe_it_database
+      encoding: utf8mb4
