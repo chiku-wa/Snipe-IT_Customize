@@ -28,6 +28,13 @@
     # Apacheのアクセスログの出力先ファイルパス
     snipe_it_apache_access_log: /var/log/httpd/snipeit_access.log
 
+    # ----- SELinuxで「httpd_sys_rw_content_t」を設定したいディレクトリの一覧
+    selinux_content_rw_dirs:
+      # ログファイルの書き込み先
+      - path: "{{ snipe_it_app_dir }}/storage"
+      # Web画面からアップロードされたファイルの保管先
+      - path: "{{ snipe_it_app_dir }}/public/uploads"
+
   # ===== リモートホストでsudoで実行するかどうか
   # sudoしない（root接続することが前提のため）
   become: false
@@ -277,6 +284,7 @@
         - { regexp: "^DB_DATABASE=", line: "DB_DATABASE='{{ mysql.database.name }}'" }
         - { regexp: "^DB_USERNAME=", line: "DB_USERNAME='{{ mysql.accounts.snipe_it.username }}'" }
         - { regexp: "^DB_PASSWORD=", line: "DB_PASSWORD='{{ mysql.accounts.snipe_it.password }}'"}
+
     - name: .env内のAPP_KEYがまだ生成されていない状態かどうか(APP_KEY=ChangeMeのままになっているか)確認する
       # grepコマンドの実行結果を変数に格納する
       ansible.builtin.command:
@@ -325,7 +333,28 @@
               ErrorLog {{ snipe_it_apache_error_log }}
               CustomLog {{ snipe_it_apache_access_log }} combined
           </VirtualHost>
-
+    # ----- その他の設定変更を行う
+    - name: アプリケーションディレクトリの所有者、グループを変更する
+      ansible.builtin.file:
+        path: "{{ snipe_it_app_dir }}"
+        # Apache上でSnipe-ITを公開するために所有者として設定する
+        owner: "{{ snipe_it_app_dir_owner }}"
+        group: "{{ snipe_it_app_dir_owner }}"
+        # 再帰的（Rオプション相当）に処理して、サブディレクトリすべてに所有者を設定する
+        recurse: true
+    - name: アプリケーションディレクトリのパーミッションを変更する
+      ansible.builtin.file:
+        path: "{{ snipe_it_app_dir }}"
+        mode: "0755"
+        # 再帰的（Rオプション相当）に処理して、サブディレクトリすべてに権限を設定する
+        recurse: true
+    - name: SELinuxの設定を変更し、Snipe-ITのアプリケーションディレクトリに対するhttpdの読み書きを許可する
+      ansible.builtin.command:
+        cmd: "chcon -R -t httpd_sys_rw_content_t {{ item.path }}"
+      # chcon,restoreconは冪等性が担保されているため、lintエラー回避のために下記を明記する。
+      changed_when: false
+      # あらかじめ定義した対象ディレクトリ全てに対して処理する
+      loop: "{{ selinux_content_rw_dirs }}"
 
   # ===== ハンドラ（tasksから呼び出される各種コマンド）を定義
   handlers:
