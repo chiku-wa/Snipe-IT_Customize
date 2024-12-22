@@ -3,6 +3,19 @@
 OSS製品であるSnipe-ITの機能改修に関する手順をここにまとめる。
 なお、Snipe-IT`v7.0.13-pre`を前提としている。
 
+前提とする環境は以下の通り。
+
+| 項目名             | 値                                                     |
+|-----------------|-------------------------------------------------------|
+| OS           | Redhat9.5                                             |
+| OSホスト名       | snipe-it-test                                         |
+| MySQL           | 8.0.36                                                |
+| PHP             | 8.1.27                                                |
+| Apache          | 2.4.57                                                |
+| Snipe-ITのバージョン  | 7.0.13                                                |
+| Snipe-ITのディレクトリ | /var/www/snipeit                                      |
+
+
 # 任意のSQLを実行してExcelダウンロードさせる機能を実装する
 
 任意のSQLを実行し、その結果をExcelでダウンロードできる機能を実装する手順を記載する。
@@ -115,6 +128,7 @@ class SqlExport implements FromCollection, WithHeadings
 ```
 
 ## ③コントローラ作成
+
 下記コマンドでコントローラを作成する。
 
 ```bash
@@ -395,6 +409,7 @@ graph TD;
 ### 具体的な修正手順
 
 下記の通りコメントアウトすれば良い。
+
 app/Presenters/AssetPresenter.php
 ```php
 ...

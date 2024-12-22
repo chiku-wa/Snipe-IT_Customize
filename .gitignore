@@ -75,6 +75,6 @@ storage/ldap_client_tls.key
 /*.sql
 /tmp/*
 
-# Ansible関連の機密情報が含まれるファイルは除外する
+# Ansible関連で、プレイブック以外のファイルは除外する
 ansible/hosts
 ansible/ansible_settings.yml

@@ -1,0 +1,371 @@
+# hostsに定義したグループ名を記載する
+- name: Snipe-ITを構築するためのプレイブック
+  hosts: snipe_it
+
+  # ===== プレイブックで使用する、各種アカウントのユーザ名、パスワードが定義されたYAMLファイルを読み込む
+  vars_files:
+    - ./ansible_settings.yml
+
+  # ===== 各種変数を定義
+  vars:
+    # ----- Composer関連
+    # 外部からダウンロードしたインストーラのファイルパス
+    composer_installer_save_path: "/tmp/composer-setup.php"
+    # Composerの実行ファイルのディレクトリ
+    composer_exec_dir: "/usr/local/bin"
+
+    # ----- Snipe-IT関連
+    # Snipe-ITのアプリケーションが存在するディレクトリ
+    snipe_it_app_dir: "/var/www/snipeit"
+    # Snipe-ITのアプリケーションディレクトリに存在する、.envファイルのファイルパス
+    snipe_it_app_env_path: "{{ snipe_it_app_dir }}/.env"
+    # Snipe-ITのアプリケーションディレクトリに設定する所有者名
+    snipe_it_app_dir_owner: "apache"
+    # Apacheの仮想ホストファイル設定
+    snipe_it_apache_conf_path: /etc/httpd/conf.d/snipeit.conf
+    # Apacheのエラーログの出力先ファイルパス
+    snipe_it_apache_error_log: /var/log/httpd/snipeit_error.log
+    # Apacheのアクセスログの出力先ファイルパス
+    snipe_it_apache_access_log: /var/log/httpd/snipeit_access.log
+
+    # ----- SELinuxで「httpd_sys_rw_content_t」を設定したいディレクトリの一覧
+    selinux_content_rw_dirs:
+      # ログファイルの書き込み先
+      - path: "{{ snipe_it_app_dir }}/storage"
+      # Web画面からアップロードされたファイルの保管先
+      - path: "{{ snipe_it_app_dir }}/public/uploads"
+
+  # ===== リモートホストでsudoで実行するかどうか
+  # sudoしない（root接続することが前提のため）
+  become: false
+
+  # ===== 実行するタスク（コマンド）を定義
+  tasks:
+    # ----- MySQL
+    # [インストール、起動、自動起動設定]
+    - name: MySQLをインストールする
+      ansible.builtin.dnf:
+        # バージョンを指定する
+        name: mysql-server-8.0.36-1.el9_3
+        # すでにインストール済みの場合はスキップする
+        state: present
+    - name: MySQLを起動し、自動起動設定を行う
+      ansible.builtin.service:
+        name: mysqld
+        state: started # サービスを起動
+        enabled: true # 自動起動設定を有効
+
+    # [「mysql_secure_installation」に相当する処理を行う]
+    - name: 前提となるパッケージを導入する（A MySQL module is required:〜Python 3.X mysqlclient or PyMySQL. エラー回避のため）
+      ansible.builtin.dnf:
+        name: python3-PyMySQL
+        # すでにインストール済みの場合はスキップする
+        state: present
+
+    - name: 「root」ユーザのパスワードを設定する
+      community.mysql.mysql_user:
+        # パスワード認証なしでログインを試みる（初回はrootパスワードが設定されいないため）
+        check_implicit_admin: true
+        # コマンドを実行する際に接続するユーザ名、パスワード
+        login_user: root
+        login_password: "{{ mysql.accounts.root_user.password }}"
+        # パスワードを変更したいユーザと、設定したいパスワード
+        name: root
+        password: "{{ mysql.accounts.root_user.password }}"
+        # すでにパスワード変更済みの場合はプレイブックの処理はスキップする
+        state: present
+
+    - name: 匿名ユーザを削除する
+      community.mysql.mysql_user:
+        # コマンドを実行する際に接続するユーザ名、パスワード
+        login_user: root
+        login_password: "{{ mysql.accounts.root_user.password }}"
+        # 全ホストで匿名ユーザを削除する（state: absentは）
+        name: "" # 匿名ユーザ
+        host_all: true # 全ホスト
+        state: absent # ユーザ削除
+
+    - name: テスト用データベースの削除
+      community.mysql.mysql_db:
+        # コマンドを実行する際に接続するユーザ名、パスワード
+        login_user: root
+        login_password: "{{ mysql.accounts.root_user.password }}"
+        # 削除したいデータベース名
+        name: test
+        # 削除する
+        state: absent
+
+    # [DB、ユーザ作成を行う]
+    - name: データベースの作成
+      community.mysql.mysql_db:
+        # コマンドを実行する際に接続するユーザ名、パスワード
+        login_user: root
+        login_password: "{{ mysql.accounts.root_user.password }}"
+        # データベースを作成する
+        name: "{{ mysql.database.name }}" # データベース名
+        encoding: "{{ mysql.database.encoding }}" # データベースのエンコーディング
+        state: present # すでにデータベースが存在している場合はスキップ
+
+    - name: ユーザの作成
+      community.mysql.mysql_user:
+        # コマンドを実行する際に接続するユーザ名、パスワード
+        login_user: root
+        login_password: "{{ mysql.accounts.root_user.password }}"
+        # ユーザを作成する
+        name: "{{ mysql.accounts.snipe_it.username }}"
+        password: "{{ mysql.accounts.snipe_it.password }}"
+        # 下記コマンド相当の権限付与を行う
+        # GRANT ALL PRIVILEGES ON <データベース>.* TO '<ユーザ名>'@'%';
+        host: "%" # すべてのホストからのアクセスを許可
+        priv: "{{ mysql.database.name }}.*:ALL" # 先ほど作成したデータベースへのすべての権限を付与
+        state: present # すでにユーザが存在している場合はスキップ
+
+    # [外部からMySQLに接続できるようにするための設定]
+    - name: MySQL用のファイアウォール開放
+      ansible.posix.firewalld:
+        # ポートを開放する
+        service: mysql
+        # ポート開放を有効化する
+        state: enabled
+        # 設定を永続化する
+        permanent: true
+        # 即時反映する
+        immediate: true
+
+    - name: 設定ファイルにアクセスを許可するIP設定を追加する
+      ansible.builtin.lineinfile:
+        path: /etc/my.cnf.d/mysql-server.cnf
+        # 「bind-address」設定がまだ存在しない場合は設定を追記し、存在する場合は置き換える
+        regexp: '^bind-address\s*='
+        line: "bind-address = 0.0.0.0"
+        state: present # regexpで指定した行が存在する場合は置き換える
+      # [ハンドラ呼び出し]設定ファイル変更後は、Ansibleのハンドラを呼び出してMySQLのサービス再起動を行う
+      notify: MySQL再起動
+
+    # ----- Apache
+    # [インストール、起動、自動起動設定]
+    - name: Apacheをインストールする
+      ansible.builtin.dnf:
+        # バージョンを指定する
+        name: httpd-2.4.57-11.el9_4.1
+        # すでにインストール済みの場合はスキップする
+        state: present
+    - name: Apacheを起動し、自動起動設定を行う
+      ansible.builtin.service:
+        name: httpd
+        state: started # サービスを起動
+        enabled: true # 自動起動設定を有効
+    # [外部からApacheに接続できるようにするための設定]
+    - name: Apache用のファイアウォール開放
+      ansible.posix.firewalld:
+        # ポートを開放する
+        port: "{{ item }}/tcp"
+        # ポート開放を有効化する
+        state: enabled
+        # 設定を永続化する
+        permanent: true
+        # 即時反映する
+        immediate: true
+      # 開放したいポート番号分だけ繰り返す（item変数に相当）
+      loop:
+        - 80
+        - 443
+
+    # ----- PHP
+    # [インストール、起動、自動起動設定]
+    - name: PHPをインストールする
+      ansible.builtin.dnf:
+        # バージョンを指定する
+        # PHP8.1はそのままでは導入できないため、モジュールの有効化（dnf module enable
+        # コマンド相当）の処理も行う。
+        name: "@php:8.1"
+        # すでにインストール済みの場合はスキップする
+        state: present
+    - name: 関連するPHPモジュールを導入する
+      ansible.builtin.dnf:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - "php-mysqlnd"
+        - "php-cli"
+        - "php-common"
+        - "php-json"
+        - "php-gd"
+        - "php-mbstring"
+        - "php-xml"
+        - "php-curl"
+        - "php-zip"
+        - "php-bcmath"
+
+    # ----- Composerの導入
+    - name: Composerのインストーラをダウンロードする
+      ansible.builtin.get_url:
+        url: https://getcomposer.org/installer
+        dest: "{{ composer_installer_save_path }}"
+        # パーミッションを明示する（curlや、php -r "copy(...)"でインストーラをDLした時と
+        # 同じになるようにする）
+        mode: "0644"
+
+    - name: Check if Composer is already installed
+      ansible.builtin.stat:
+        path: "{{ composer_exec_dir }}/composer"
+      register: composer_stat
+
+    - name: Composerをインストールする
+      ansible.builtin.command:
+        cmd: "php {{ composer_installer_save_path }} --install-dir={{ composer_exec_dir }} --filename=composer"
+        # Composerの実行ファイルが存在しない場合のみインストールする
+        creates: "{{ composer_exec_dir }}/composer"
+
+    # ----- Snipe-ITを導入する
+    - name: Snipe-ITのアプリケーションディレクトリを作成する
+      ansible.builtin.file:
+        path: "{{ snipe_it_app_dir }}"
+        # 存在しない場合のみディレクトリを作成
+        state: directory
+        # 所有者、グループにはApacheのユーザを指定する
+        owner: "{{ snipe_it_app_dir_owner }}"
+        group: "{{ snipe_it_app_dir_owner }}"
+        mode: "0755"
+    - name: 作成したSnipe-ITのアプリケーションディレクトリが、安全なディレクトリであることをGitに明示させる設定（safe.directory）
+      community.general.git_config:
+        scope: global
+        name: safe.directory
+        value: "{{ snipe_it_app_dir }}"
+    - name: Snipe-ITをGitHubからクローンする
+      ansible.builtin.git:
+        repo: https://github.com/snipe/snipe-it.git
+        # Clone先を指定する
+        dest: "{{ snipe_it_app_dir }}"
+        # バージョン（Gitのタグ名）を指定する
+        version: v7.0.13
+        # もしローカルに既存のリポジトリが存在する場合は上書きする
+        force: true
+        # 既存リポジトリが存在する場合は更新する
+        update: true
+    - name: Snipe-ITのComposerをアップデートする
+      community.general.composer:
+        command: update
+        working_dir: "{{ snipe_it_app_dir }}"
+    - name: Snipe-ITの依存関係のあるパッケージを導入する
+      community.general.composer:
+        command: install
+        working_dir: "{{ snipe_it_app_dir }}"
+        # 開発用パッケージは除外し、Gitリポじトロなどのソースから取得する
+        arguments: "--no-dev --prefer-source"
+    # .envを作成する
+    - name: .env.exampleをコピーして.envを作成する
+      ansible.builtin.copy:
+        src: "{{ snipe_it_app_env_path }}.example"
+        dest: "{{ snipe_it_app_env_path }}"
+        # 管理対象ノード上のファイルをコピーする
+        remote_src: true
+        # すでに同じファイルが存在している場合も上書きする
+        force: true
+        # コピー元ファイル.env.exampleと同じパーミッションでコピーする
+        mode: "644"
+    - name: .env編集
+      ansible.builtin.lineinfile:
+        path: "{{ snipe_it_app_env_path }}"
+        # 正規表現に一致する行を指定
+        regexp: "{{ item.regexp }}"
+        # 置換したい文字列
+        line: "{{ item.line }}"
+        state: present
+      # 置換したい文字列と、置換後の文字列をループ処理で定義
+      loop:
+        # Snipe-ITにアクセスする際のHTTPのURLを設定する。IPには、Ansibleで接続している管理対象ノードのIPを指定する
+        - { regexp: "^APP_URL=", line: "APP_URL=http://{{ ansible_default_ipv4.address }}" }
+        # タイムゾーンに日本語を指定する。
+        - { regexp: "^APP_ZONE=", line: "APP_ZONE='Asia/Tokyo'" }
+        # 日本語を指定する。
+        - { regexp: "^APP_LOCALE=", line: "APP_LOCALE='ja-JP'" }
+        # DB情報を指定する。
+        - { regexp: "^DB_DATABASE=", line: "DB_DATABASE='{{ mysql.database.name }}'" }
+        - { regexp: "^DB_USERNAME=", line: "DB_USERNAME='{{ mysql.accounts.snipe_it.username }}'" }
+        - { regexp: "^DB_PASSWORD=", line: "DB_PASSWORD='{{ mysql.accounts.snipe_it.password }}'"}
+
+    - name: .env内のAPP_KEYがまだ生成されていない状態かどうか(APP_KEY=ChangeMeのままになっているか)確認する
+      # grepコマンドの実行結果を変数に格納する
+      ansible.builtin.command:
+        chdir: "{{ snipe_it_app_dir }}"
+        cmd: "grep '^APP_KEY=ChangeMe' {{ snipe_it_app_env_path }}"
+      register: is_not_generate_app_key
+      # grepコマンド実行のみで冪等性が担保されているため、lintエラー回避のために下記を明記する。
+      changed_when: false
+      # 一致する行が見つからなかった場合も正常とみなすため、Ansibleエラー回避のために下記を明記する。
+      failed_when: false
+
+    - name: アプリケーションキー（APP_KEY）が生成されていないなら、aritisanコマンドで生成する
+      ansible.builtin.command:
+        # 対話形式の「Are you sure you want to run this command?」を表示させないようにforceオプションをつけて実行する
+        chdir: "{{ snipe_it_app_dir }}"
+        # Yes/No対話形式での確認画面をスキップするため、--forceオプションを付与してキーを生成する
+        cmd: php artisan key:generate --force
+      # APP_KEYが生成されていない場合のみ、artisanで生成を行う
+      when: is_not_generate_app_key.stdout != ""
+      # whenでAPP_KEYが生成されていないかどうか判定しており、冪等性が確保されているため、lintエラー回避のために下記を明記する。
+      changed_when: false
+
+    # ----- Apacheの仮想ホスト設定を行う
+    - name: Snipe-IT用のApacheの仮想ホスト設定ファイルを作成する
+      ansible.builtin.blockinfile:
+        # 作成するファイル
+        path: "{{ snipe_it_apache_conf_path }}"
+        # ファイルが存在しなければ作成する
+        create: true
+        mode: "644"
+        block: |
+          <VirtualHost *:80>
+              ServerName {{ ansible_default_ipv4.address }}
+              DocumentRoot {{ snipe_it_app_dir }}/public
+
+              <Directory {{ snipe_it_app_dir }}/public>
+                  Options Indexes FollowSymLinks
+                  AllowOverride All
+                  Require all granted
+              </Directory>
+
+              <FilesMatch "\.(env|htaccess|log|sh|config)$">
+                  Require all denied
+              </FilesMatch>
+
+              ErrorLog {{ snipe_it_apache_error_log }}
+              CustomLog {{ snipe_it_apache_access_log }} combined
+          </VirtualHost>
+    # ----- その他の設定変更を行う
+    - name: アプリケーションディレクトリの所有者、グループを変更する
+      ansible.builtin.file:
+        path: "{{ snipe_it_app_dir }}"
+        # Apache上でSnipe-ITを公開するために所有者として設定する
+        owner: "{{ snipe_it_app_dir_owner }}"
+        group: "{{ snipe_it_app_dir_owner }}"
+        # 再帰的（Rオプション相当）に処理して、サブディレクトリすべてに所有者を設定する
+        recurse: true
+    - name: アプリケーションディレクトリのパーミッションを変更する
+      ansible.builtin.file:
+        path: "{{ snipe_it_app_dir }}"
+        mode: "0755"
+        # 再帰的（Rオプション相当）に処理して、サブディレクトリすべてに権限を設定する
+        recurse: true
+    - name: SELinuxの設定を変更し、Snipe-ITのアプリケーションディレクトリに対するhttpdの読み書きを許可する
+      ansible.builtin.command:
+        cmd: "chcon -R -t httpd_sys_rw_content_t {{ item.path }}"
+      # chcon,restoreconは冪等性が担保されているため、lintエラー回避のために下記を明記する。
+      changed_when: false
+      # あらかじめ定義した対象ディレクトリ全てに対して処理する
+      loop: "{{ selinux_content_rw_dirs }}"
+    - name: SELinuxの設定を変更し、httpdがデータベースにアクセスできるようにする
+      ansible.posix.seboolean:
+        name: httpd_can_network_connect_db
+        state: true
+        # OS再起動後も保持されるようにする
+        persistent: true
+
+  # ===== ハンドラ（tasksから呼び出される各種コマンド）を定義
+  handlers:
+    # MySQLのサービスを再起動するハンドラ
+    - name: MySQL再起動
+      ansible.builtin.service:
+        name: mysqld
+        state: restarted
