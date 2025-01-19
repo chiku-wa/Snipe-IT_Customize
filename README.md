@@ -482,6 +482,182 @@ graph TB;
     License::getExpiringLicenses["License::getExpiringLicenses"]-->|"②ライセンス一覧を抽出"|SendExpirationAlerts;
 ```
 
+## 本文の修正方法
+
+下記ファイルに修正を加えること。
+
+resources/views/notifications/markdown/report-expiring-licenses.blade.php
+
+```php
+@component('mail::message')
+{{ trans_choice('mail.license_expiring_alert', $licenses->count(), ['count'=>$licenses->count(), 'threshold' => $threshold]) }}
+@component('mail::table')
+
+<table width="100%">
+<tr><td>&nbsp;</td><td>{{ trans('mail.name') }}</td><td>{{ trans('mail.Days') }}</td><td>{{ trans('mail.expires') }}</td></tr>
+@foreach ($licenses as $license)
+@php
+$expires = Helper::getFormattedDateObject($license->expiration_date, 'date');
+$diff = round(abs(strtotime($license->expiration_date->format('Y-m-d')) - strtotime(date('Y-m-d')))/86400);
+$icon = ($diff <= ($threshold / 2)) ? '🚨' : (($diff <= $threshold) ? '⚠️' : ' ');
+@endphp
+<tr><td>{{ $icon }} </td><td> <a href="{{ route('licenses.show', $license->id) }}">{{ $license->name }}</a> </td><td> {{ $diff }} {{ trans('mail.Days') }}  </td><td>{{ $expires['formatted'] }}</td></tr>
+@endforeach
+</table>
+@endcomponent
+@endcomponent
+```
+
+※`@foreach ($licenses as $license)〜@endforeach`の箇所が取得したライセンス一覧を表示している箇所となる。
+
+## 任意のSQLを実行してメール本文内に表示したい
+
+※ライセンス情報と所属情報を並列で出力させるロジックの実装を例にして説明する。
+
+任意のSQLを実行させるメソッドを作成し、`php artisan snipeit:expiring-alerts`実行時に呼び出すようにする。
+
+### ①ライセンス抽出用メソッドの定義
+下記の通り、自作のライセンス抽出用のメソッドを追加する。
+
+app/Models/License.php
+
+```php
+...
+    public static function getExpiringLicensesGroupWithCompany($days = 60)
+    {
+        $days = (is_null($days)) ? 60 : $days;
+
+        // 「所属」テーブル名を取得する
+        $tableNameCompany=(new Company())->getTable();;
+
+        // 「ライセンス」テーブル名を取得する
+        $tableNameLicense = (new License())->getTable();
+
+        return self::select(
+                "{$tableNameLicense}.id"
+                ,"{$tableNameCompany}.name as company_name"
+                ,"{$tableNameLicense}.name"
+                ,"expiration_date"
+            )
+            ->leftjoin(
+                $tableNameCompany
+                ,"{$tableNameCompany}.id", "=","{$tableNameLicense}.company_id"
+            )
+            ->whereNotNull('expiration_date')
+            ->whereNull('deleted_at')
+            ->whereRaw('DATE_SUB(`expiration_date`,INTERVAL '.$days.' DAY) <= DATE(NOW()) ')
+            ->where('expiration_date', '>', date('Y-m-d'))
+            ->orderBy(
+                'company_name', 'ASC'
+                ,'expiration_date', 'ASC')
+            ->get();
+    }
+...
+```
+
+---
+
+SELECT句の所属名は、列別名で`company_name`を付与している。これは後述の本文用View`resources/views/notifications/markdown/report-expiring-licenses-custom.blade.php`で引用するために列別名を定義している。
+
+---
+
+### ②追加したライセンス抽出用メソッドを呼び出すように修正
+
+先ほど作成したメソッドを呼び出すように、以下のクラスを修正する。
+
+app/Console/Commands/SendExpirationAlerts.php
+
+```php
+    /**
+     * Execute the console command.
+     *
+     * @return mixed
+     */
+    public function handle()
+    {
+            ...
+                \Notification::send($recipients, new ExpiringAssetsNotification($assets, $threshold));
+            }
+
+            // ★もともと存在するライセンス抽出処理をコメントアウト
+            // Expiring licenses
+            // $licenses = License::getExpiringLicenses($threshold);
+
+            // ★新たに、ライセンス抽出処理を追加
+            $licenses = License::getExpiringLicensesGroupWithCompany($threshold);
+
+            if ($licenses->count() > 0) {
+                $this->info(trans_choice('mail.license_expiring_alert', $licenses->count(), ['count' => $licenses->count(), 'threshold' => $threshold]));
+                \Notification::send($recipients, new ExpiringLicenseNotification($licenses, $threshold));
+            }
+        } else {
+            if ($settings->alert_email == '') {
+                $this->error('Could not send email. No alert email configured in settings');
+...
+```
+### ③追加したライセンス抽出用メソッドに合わせて、本文テンプレートを修正する
+
+もともと存在するメール本文テンプレートを別名でコピーする。
+
+`resources/views/notifications/markdown/report-expiring-licenses.blade.php`
+｜
+コピー
+↓
+`resources/views/notifications/markdown/report-expiring-licenses-custom.blade.php`
+
+下記の通り修正する。
+
+resources/views/notifications/markdown/report-expiring-licenses-custom.blade.php
+
+```php
+@component('mail::message')
+    {{ trans_choice('mail.license_expiring_alert', $licenses->count(), ['count' => $licenses->count(), 'threshold' => $threshold]) }}
+    @component('mail::table')
+        <table width="100%">
+            <tr>
+                <td>&nbsp;</td>
+                <td>
+                  {{ # ヘッダに「所属名」を追加
+                      trans('general.company')
+                  }}
+                </td>
+                <td>{{ trans('mail.name') }}</td>
+                <td>{{ trans('mail.Days') }}</td>
+                <td>{{ trans('mail.expires') }}</td>
+            </tr>
+            @foreach ($licenses as $license)
+                @php
+                    $expires = Helper::getFormattedDateObject($license->expiration_date, 'date');
+                    $diff = round(
+                        abs(strtotime($license->expiration_date->format('Y-m-d')) - strtotime(date('Y-m-d'))) / 86400,
+                    );
+                    $icon = $diff <= $threshold / 2 ? '🚨' : ($diff <= $threshold ? '⚠️' : ' ');
+                @endphp
+                <tr>
+                    <td>{{ $icon }} </td>
+                    <td>
+                      {{ /*
+                          「app/Models/License.php」に追加したライセンス抽出用メソッドのSELECT句の別名「company_name」
+                          に対応する列情報を記載する。
+                        */
+                          $license->company_name
+                      }}
+                    </td>
+                    <td> <a href="{{ route('licenses.show', $license->id) }}">{{ $license->name }}</a> </td>
+                    <td> {{ $diff }} {{ trans('mail.Days') }} </td>
+                    <td>{{ $expires['formatted'] }}</td>
+                </tr>
+            @endforeach
+        </table>
+    @endcomponent
+@endcomponent
+
+```
+
+`php artisan snipeit:expiring-alerts`を実行すると、以下の通り`所属`が追加された状態でメールが送信される。
+
+![alt text](images/image-5.png)
+
 
 # 参考
 
