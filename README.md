@@ -465,6 +465,24 @@ resources/views/reports/custom.blade.php
 ・・・
 ```
 
+# ライセンスのアラートメールの本文をカスタマイズする
+
+MVCフローチャートは以下の通り。
+
+[イメージ]
+
+```mermaid
+graph TB;
+    Command["「php artisan snipeit:expiring-alerts」コマンドを実行"]
+    -->|"①"|SendExpirationAlerts["app/Console/Commands/SendExpirationAlerts.php<br>※public function handle()メソッドを実行"]
+    -->|"③"|ExpiringLicenseNotification["app/Notifications/ExpiringLicenseNotification.php<br>※public function toMail()メソッドを実行"]
+    -->|"④メッセージテンプレートを読み込み"|reportExpiringLicenses[メール本文のView<br>resources/views/notifications/markdown/report-expiring-licenses.blade.php];
+
+    SendExpirationAlerts-->|"②ライセンス取得"|License::getExpiringLicenses["License::getExpiringLicenses"]
+    License::getExpiringLicenses["License::getExpiringLicenses"]-->|"②ライセンス一覧を抽出"|SendExpirationAlerts;
+```
+
+
 # 参考
 
 ## Ansibleを用いたSnipe-IT構築
