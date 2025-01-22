@@ -658,6 +658,67 @@ resources/views/notifications/markdown/report-expiring-licenses-custom.blade.php
 
 ![alt text](images/image-5.png)
 
+# ライセンスに標準項目を追加する
+
+ライセンスはその仕様上、カスタムフィールドを追加することができない。よって、本稿でソースコードを修正して項目を追加する手順を記載する。
+
+下記の項目を追加する前提で説明する。
+
+| 項目      | 値       | 備考                            |
+| --- | --- | --- |
+| 対象のモデル  | License | Snipe-ITに備わっている標準のモデル。         |
+| 追加するカラム | isAlert | 有効期限切れ時に、メール通知するかどうかを識別するフラグ。 |
+
+## ①マイグレーションファイルを作成する。
+
+以下のコマンドを実行し、マイグレーションファイルを作成する。
+
+`php artisan make:migration add_isAlert_to_licenses --table=licenses`
+
+生成されたファイルを編集する。。
+
+database/migrations/yyyy_mm_dd_084044_add_is_alert_to_licenses.php
+```php
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    // ★★★★★★★★★★★★★★★★★
+    // カラムを追加する処理
+    // ★★★★★★★★★★★★★★★★★
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::table('licenses', function (Blueprint $table) {
+            // カラム追加
+            $table->カラムのデータ型('新規カラム名')->comment('コメント')->after('既存カラム名');          // 構文
+            $table->timestamp('rest_password_expire_data')->nullable()->comment('パスワード再設定キーの有効期限`````');     // 例
+        });
+    }
+
+    // ★★★★★★★★★★★★★★★★★
+    // カラムを削除する処理
+    // ※切り戻し用の処理
+    // ★★★★★★★★★★★★★★★★★
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::table('licenses', function (Blueprint $table) {
+            //
+        });
+    }
+};
+```
+
+
 
 # 参考
 

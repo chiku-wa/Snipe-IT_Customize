@@ -12,6 +12,22 @@
 
 {{-- Page content --}}
 @section('inputFields')
+
+{{-- 追加した「有効期限切れ通知」項目のパーシャル読み込み処理 --}}
+{{-- @include ('partials.forms.edit.is_alert', ['translated_name' => trans('admin/licenses/form.is_alert')]) --}}
+<div class="form-group {{ $errors->has('is_alert') ? ' has-error' : '' }}">
+    <div class="col-md-3 control-label">
+        <strong>{{ trans('admin/licenses/form.is_alert') }}</strong>
+    </div>
+    <div class="col-md-7">
+        <label class="form-control">
+        {{ Form::Checkbox('is_alert', '1', old('is_alert', $item->id ? $item->reassignable : '1'),array('aria-label'=>'is_alert')) }}
+        {{ trans('general.yes') }}
+        </label>
+    </div>
+</div>
+
+
 @include ('partials.forms.edit.name', ['translated_name' => trans('admin/licenses/form.name')])
 @include ('partials.forms.edit.category-select', ['translated_name' => trans('admin/categories/general.category_name'), 'fieldname' => 'category_id', 'required' => 'true', 'category_type' => 'license'])
 
