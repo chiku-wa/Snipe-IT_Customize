@@ -14,7 +14,7 @@
 
     <!-- Custom Tabs -->
     <div class="nav-tabs-custom">
-      
+
       <ul class="nav nav-tabs hidden-print">
 
         <li class="active">
@@ -58,7 +58,6 @@
             <span class="hidden-xs hidden-sm">{{ trans('general.history') }}</span>
           </a>
         </li>
-        
         @can('update', \App\Models\License::class)
           <li class="pull-right"><a href="#" data-toggle="modal" data-target="#uploadFileModal">
               <x-icon type="paperclip" /> {{ trans('button.upload') }}</a>
@@ -72,6 +71,18 @@
           <div class="row">
             <div class="col-md-12">
               <div class="container row-new-striped">
+
+                {{-- 追加した「有効期限切れを通知する」に対応する表示項目 --}}
+                <div class="row">
+                  <div class="col-md-3">
+                    <strong>{{ trans('admin/licenses/general.is_alert') }}</strong>
+                  </div>
+                  <div class="col-md-9">
+                    {{-- 1ならチェックあり、0ならチェック無しで表示する --}}
+                    {!! $license->is_alert ? '<i class="fas fa-check fa-fw text-success" aria-hidden="true"></i> '.trans('general.yes') : '<i class="fas fa-times fa-fw text-danger" aria-hidden="true"></i> '.trans('general.no') !!}
+
+                  </div>
+                </div>
 
                 @if (!is_null($license->company))
                   <div class="row">

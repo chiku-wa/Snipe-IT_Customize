@@ -13,7 +13,7 @@
 {{-- Page content --}}
 @section('inputFields')
 
-{{-- 追加した「有効期限切れ通知」項目のパーシャル読み込み処理 --}}
+{{-- 追加した「有効期限切れを通知する」項目 --}}
 {{-- @include ('partials.forms.edit.is_alert', ['translated_name' => trans('admin/licenses/form.is_alert')]) --}}
 <div class="form-group {{ $errors->has('is_alert') ? ' has-error' : '' }}">
     <div class="col-md-3 control-label">
@@ -21,7 +21,7 @@
     </div>
     <div class="col-md-7">
         <label class="form-control">
-        {{ Form::Checkbox('is_alert', '1', old('is_alert', $item->id ? $item->reassignable : '1'),array('aria-label'=>'is_alert')) }}
+        {{ Form::Checkbox('is_alert', '1', old('is_alert', $item->id ? $item->is_alert : '1'),array('aria-label'=>'is_alert')) }}
         {{ trans('general.yes') }}
         </label>
     </div>

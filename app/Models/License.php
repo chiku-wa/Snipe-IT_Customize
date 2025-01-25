@@ -54,6 +54,9 @@ class License extends Depreciable
         'expiration_date'   => 'date_format:Y-m-d|nullable|max:10',
         'termination_date'   => 'date_format:Y-m-d|nullable|max:10',
         'min_amt'   => 'numeric|nullable|gte:0',
+
+        // 追加した「有効期限切れを通知する」に対応するチェックボックス
+        'is_alert',
     ];
 
     /**
@@ -83,6 +86,9 @@ class License extends Depreciable
         'termination_date',
         'created_by',
         'min_amt',
+
+        // 追加した「有効期限切れを通知する」に対応するチェックボックス
+        'is_alert',
     ];
 
     use Searchable;
@@ -101,6 +107,9 @@ class License extends Depreciable
         'purchase_cost',
         'purchase_date',
         'expiration_date',
+
+        // 追加した「有効期限切れを通知する」に対応するチェックボックス
+        'is_alert',
     ];
 
     /**
@@ -235,6 +244,19 @@ class License extends Depreciable
     {
         $this->attributes['maintained'] = filter_var($value, FILTER_VALIDATE_BOOLEAN);
     }
+
+    /**
+     * 追加した「有効期限切れを通知する」に対応するチェックボックス
+     *
+     * @author chiku-wa
+     * @since [v1.0]
+     * @return mixed
+     */
+    public function setIsAlertAttribute($value)
+    {
+        $this->attributes['is_alert'] = filter_var($value, FILTER_VALIDATE_BOOLEAN);
+    }
+
 
     /**
      * Sets the reassignable attribute
