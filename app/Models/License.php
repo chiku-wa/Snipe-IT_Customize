@@ -748,6 +748,8 @@ class License extends Depreciable
             ->whereNull('deleted_at')
             ->whereRaw('DATE_SUB(`expiration_date`,INTERVAL '.$days.' DAY) <= DATE(NOW()) ')
             ->where('expiration_date', '>', date('Y-m-d'))
+			// ★追加した「有効期限切れを通知する」がTrueのライセンス情報のみを対象にする
+            ->where('is_alert', '=', 1)
             ->orderBy(
                 'company_name', 'ASC'
                 ,'expiration_date', 'ASC')

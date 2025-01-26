@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::table('licenses', function (Blueprint $table) {
             // 末尾に追加するため、after(は省略する)
-            $table->boolean('is_alert')->default(false);
+            $table->boolean('is_alert')->default(true);
         });
     }
 
