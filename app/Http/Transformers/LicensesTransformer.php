@@ -54,6 +54,9 @@ class LicensesTransformer
             'deleted_at' => Helper::getFormattedDateObject($license->deleted_at, 'datetime'),
             'user_can_checkout' => (bool) ($license->free_seats_count > 0),
 
+            // 追加した「有効期限切れを通知する」に対応するチェックボックス
+            'is_alert' => ($license->is_alert == 1) ? true : false,
+
         ];
 
         $permissions_array['available_actions'] = [

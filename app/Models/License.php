@@ -54,9 +54,6 @@ class License extends Depreciable
         'expiration_date'   => 'date_format:Y-m-d|nullable|max:10',
         'termination_date'   => 'date_format:Y-m-d|nullable|max:10',
         'min_amt'   => 'numeric|nullable|gte:0',
-
-        // 追加した「有効期限切れを通知する」に対応するチェックボックス
-        'is_alert',
     ];
 
     /**

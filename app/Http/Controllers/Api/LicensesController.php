@@ -38,6 +38,12 @@ class LicensesController extends Controller
             $licenses->where('licenses.serial', '=', $request->input('product_key'));
         }
 
+        // 追加した「有効期限切れを通知」に対応する項目を追加
+        // ※検索キーワードを受け入れるロジック
+        if ($request->filled('is_alert')) {
+            $licenses->where('licenses.is_alert', '=', $request->input('is_alert'));
+        }
+
         if ($request->filled('order_number')) {
             $licenses->where('order_number', '=', $request->input('order_number'));
         }
@@ -140,6 +146,9 @@ class LicensesController extends Controller
                         'termination_date',
                         'depreciation_id',
                         'min_amt',
+
+                        // 追加した「有効期限切れを通知」に対応する項目を追加
+                        'is_alert',
                     ];
                 $sort = in_array($request->input('sort'), $allowed_columns) ? e($request->input('sort')) : 'created_at';
                 $licenses = $licenses->orderBy($sort, $order);
