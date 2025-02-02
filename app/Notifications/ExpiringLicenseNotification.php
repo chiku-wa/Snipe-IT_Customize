@@ -47,12 +47,21 @@ class ExpiringLicenseNotification extends Notification
      */
     public function toMail()
     {
-        $message = (new MailMessage)->markdown('notifications.markdown.report-expiring-licenses',
-            [
-                'licenses'  => $this->licenses,
-                'threshold'  => $this->threshold,
-            ])
-            ->subject(trans('mail.Expiring_Licenses_Report'));
+        // $message = (new MailMessage)->markdown('notifications.markdown.report-expiring-licenses',
+        //     [
+        //         'licenses'  => $this->licenses,
+        //         'threshold'  => $this->threshold,
+        //     ])
+        //     ->subject(trans('mail.Expiring_Licenses_Report'));
+
+        // IMPRV:カスタムしたメール本文を使用
+        $message = (new MailMessage)->markdown('notifications.markdown.report-expiring-licenses-custom',
+        [
+            'licenses'  => $this->licenses,
+            'threshold'  => $this->threshold,
+        ])
+        ->subject(trans('mail.Expiring_Licenses_Report'));
+
 
         return $message;
     }

@@ -42,13 +42,23 @@ class LicensePresenter extends Presenter
                 'sortable' => true,
                 'title' => trans('admin/licenses/form.license_key'),
                 'formatter' => 'licensesLinkFormatter',
-            ], [
+            ],
+            // 追加した「有効期限切れを通知」に対応する項目を追加
+            [
+                'field' => 'is_alert',
+                'searchable' => true,
+                'sortable' => true,
+                'title' => trans('admin/licenses/form.is_alert'),
+                'formatter' => 'trueFalseFormatter',
+            ],
+            [
                 'field' => 'expiration_date',
                 'searchable' => true,
                 'sortable' => true,
                 'title' => trans('admin/licenses/form.expiration'),
                 'formatter' => 'dateDisplayFormatter',
-            ], [
+            ],
+             [
                 'field' => 'license_email',
                 'searchable' => true,
                 'sortable' => true,

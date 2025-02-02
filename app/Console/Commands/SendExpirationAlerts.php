@@ -58,8 +58,13 @@ class SendExpirationAlerts extends Command
                 \Notification::send($recipients, new ExpiringAssetsNotification($assets, $threshold));
             }
 
+            // ★もともと存在するライセンス抽出処理をコメントアウト
             // Expiring licenses
-            $licenses = License::getExpiringLicenses($threshold);
+            // $licenses = License::getExpiringLicenses($threshold);
+
+            // ★新たに、ライセンス抽出処理を追加
+            $licenses = License::getExpiringLicensesGroupWithCompany($threshold);
+
             if ($licenses->count() > 0) {
                 $this->info(trans_choice('mail.license_expiring_alert', $licenses->count(), ['count' => $licenses->count(), 'threshold' => $threshold]));
                 \Notification::send($recipients, new ExpiringLicenseNotification($licenses, $threshold));

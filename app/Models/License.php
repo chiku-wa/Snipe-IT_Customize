@@ -83,6 +83,9 @@ class License extends Depreciable
         'termination_date',
         'created_by',
         'min_amt',
+
+        // 追加した「有効期限切れを通知する」に対応するチェックボックス
+        'is_alert',
     ];
 
     use Searchable;
@@ -101,6 +104,9 @@ class License extends Depreciable
         'purchase_cost',
         'purchase_date',
         'expiration_date',
+
+        // 追加した「有効期限切れを通知する」に対応するチェックボックス
+        'is_alert',
     ];
 
     /**
@@ -235,6 +241,19 @@ class License extends Depreciable
     {
         $this->attributes['maintained'] = filter_var($value, FILTER_VALIDATE_BOOLEAN);
     }
+
+    /**
+     * 追加した「有効期限切れを通知する」に対応するチェックボックス
+     *
+     * @author chiku-wa
+     * @since [v1.0]
+     * @return mixed
+     */
+    public function setIsAlertAttribute($value)
+    {
+        $this->attributes['is_alert'] = filter_var($value, FILTER_VALIDATE_BOOLEAN);
+    }
+
 
     /**
      * Sets the reassignable attribute
@@ -374,11 +393,11 @@ class License extends Depreciable
                 return Helper::parseEscapedMarkedown($this->category->eula_text);
             } elseif ($this->category->use_default_eula == '1') {
                 return Helper::parseEscapedMarkedown(Setting::getSettings()->default_eula_text);
-            } 
+            }
         }
 
         return false;
-        
+
     }
 
     /**
@@ -691,6 +710,46 @@ class License extends Depreciable
             ->whereRaw('DATE_SUB(`expiration_date`,INTERVAL '.$days.' DAY) <= DATE(NOW()) ')
             ->where('expiration_date', '>', date('Y-m-d'))
             ->orderBy('expiration_date', 'ASC')
+            ->get();
+    }
+
+    /**
+     * 「所属(company)」情報を付記したライセンス一覧を取得する。
+     *
+     *
+     * @author chiku-wa
+     * @since [v1.0]
+     * @return \Illuminate\Database\Eloquent\Relations\Relation
+     */
+    public static function getExpiringLicensesGroupWithCompany($days = 60)
+    {
+        $days = (is_null($days)) ? 60 : $days;
+
+        // 「所属」テーブル名を取得する
+        $tableNameCompany=(new Company())->getTable();;
+
+        // 「ライセンス」テーブル名を取得する
+        $tableNameLicense = (new License())->getTable();
+
+        return self::select(
+                "{$tableNameLicense}.id"
+                ,"{$tableNameCompany}.name as company_name"
+                ,"{$tableNameLicense}.name"
+                ,"expiration_date"
+            )
+            ->leftjoin(
+                $tableNameCompany
+                ,"{$tableNameCompany}.id", "=","{$tableNameLicense}.company_id"
+            )
+            ->whereNotNull('expiration_date')
+            ->whereNull('deleted_at')
+            ->whereRaw('DATE_SUB(`expiration_date`,INTERVAL '.$days.' DAY) <= DATE(NOW()) ')
+            ->where('expiration_date', '>', date('Y-m-d'))
+			// ★追加した「有効期限切れを通知する」がTrueのライセンス情報のみを対象にする
+            ->where('is_alert', '=', 1)
+            ->orderBy(
+                'company_name', 'ASC'
+                ,'expiration_date', 'ASC')
             ->get();
     }
 

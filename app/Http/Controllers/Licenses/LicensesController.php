@@ -102,6 +102,9 @@ class LicensesController extends Controller
         $license->created_by           = auth()->id();
         $license->min_amt           = $request->input('min_amt');
 
+        // 追加した「有効期限切れを通知する」に対応するチェックボックス
+        $license->is_alert           = $request->input('is_alert');
+
         session()->put(['redirect_option' => $request->get('redirect_option')]);
 
         if ($license->save()) {
@@ -181,6 +184,9 @@ class LicensesController extends Controller
         $license->supplier_id       = $request->input('supplier_id');
         $license->category_id       = $request->input('category_id');
         $license->min_amt           = $request->input('min_amt');
+
+        // 追加した「有効期限切れを通知する」に対応するチェックボックス
+        $license->is_alert           = $request->input('is_alert');
 
         session()->put(['redirect_option' => $request->get('redirect_option')]);
 
