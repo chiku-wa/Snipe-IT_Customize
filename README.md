@@ -329,7 +329,7 @@ resources/views/CustomReport/index.blade.php
 @stop
 ```
 
-※`{{ route('myreport/assets_and_licences_report') }}`は、「[[/コントローラ、ルーティング作成]]」で記述したルーティングの名前（`->name`）に対応する。
+※`{{ route('myreport/assets_and_licences_report') }}`は、[こちら](#①コントローラ、ルーティング作成)で記述したルーティングの名前（`->name`）に対応する。
 
 # 資産情報の標準項目を非表示にする
 
@@ -1073,7 +1073,7 @@ Date: Fri, 31 Jan 2025 23:59:01 GMT
 
 ## 期限切れ通知メールをカスタマイズする
 ### 抽出用メソッドの修正
-「[[/①ライセンス抽出用メソッドの定義]]」で定義したメソッドに条件式を追加し、先程追加した`is_alert`がtrueの場合のライセンス情報のみを送信するようにする。
+「[こちら](#①ライセンス抽出用メソッドの定義)」で定義したメソッドに条件式を追加し、先程追加した`is_alert`がtrueの場合のライセンス情報のみを送信するようにする。
 
 app/Models/License.php
 ```php
@@ -1095,6 +1095,7 @@ app/Models/License.php
 ```
 
 下記コマンドを実行し、メールアラートを送信する。
+
 ※あらかじめ、期限切れを迎えたライセンス情報を登録しておくこと
 
 `php artisan snipeit:expiring-alerts`
