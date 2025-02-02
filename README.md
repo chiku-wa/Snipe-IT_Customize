@@ -329,7 +329,7 @@ resources/views/CustomReport/index.blade.php
 @stop
 ```
 
-※`{{ route('myreport/assets_and_licences_report') }}`は、[こちら](#①コントローラ、ルーティング作成)で記述したルーティングの名前（`->name`）に対応する。
+※`{{ route('myreport/assets_and_licences_report') }}`は、[こちら](#コントローラルーティング作成)で記述したルーティングの名前（`->name`）に対応する。
 
 # 資産情報の標準項目を非表示にする
 
@@ -774,7 +774,7 @@ return array(
 ```
 
 - - -
-- `trans('admin/licenses/form.is_alert')`の部分が「[[/②ラベルを定義する]]」で定義したラベル名に連動している。
+- `trans('admin/licenses/form.is_alert')`の部分が「[こちら](#1-表示ラベルを定義する)」で定義したラベル名に連動している。
 
 - 今回の入力項目はチェックボックスのため、パーシャルを用いないシンプルな入力フォームを実装している。
   実装においては、標準項目の`再割当て可能`を引用している。
