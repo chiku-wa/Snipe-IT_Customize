@@ -41,7 +41,7 @@ graph TD;
     menu[Snipe-ITの標準メニュー<br>views/layouts/default.blade.php] -->|左のサイドバーからリンクをクリック|custom_controller_index[自作のコントローラ.アクション<br/>Controllers/MyReportController.index]-->|Excelの一覧画面を表示|custom_view[自作のView<br/>views/MyReport/index.blade.php];
 
     %%  自作ViewからExcelダウンロードへの導線
-    custom_view-->|Excelの一覧画面からダウンロードリンクをクリック|custom_controller_[自作のコントローラ.アクション<br/>Controllers/MyReport.assets_and_licences_report]-->|ブラウザダウンロード|dl_excel[Excelダウンロード];
+    custom_view-->|Excelの一覧画面からダウンロードリンクをクリック|custom_controller_[自作のコントローラ.アクション<br/>Controllers/MyReport.assets_and_licenses_report]-->|ブラウザダウンロード|dl_excel[Excelダウンロード];
 ```
 
 ### 画面の操作イメージ
@@ -164,7 +164,7 @@ class MyReportController extends Controller
      * 資産とライセンス情報を並列で抽出し、Excelでダウンロードさせるアクションメソッド。
      */
 
-    public function assets_and_licences_report()
+    public function assets_and_licenses_report()
     {
         // SQLで使用する各種テーブル名を、モデルクラスから抽出する
         // ※文字列内でテーブル名を直書きしないようにするため
@@ -228,13 +228,13 @@ Route::group(['middleware' => ['auth']], function () {
 ・・・
 	★↓追記
     // 自作のカスタムレポートのルーティング情報
-    Route::get('/MyReport/assets_and_licences_report', [MyReportController::class, 'assets_and_licences_report']);
+    Route::get('/MyReport/assets_and_licenses_report', [MyReportController::class, 'assets_and_licenses_report']);
 ・・・
 ```
 
 上記を追記したら、以下のアドレスにアクセスする。
 
-http://<IPアドレス>/MyReport/assets_and_licences_report
+http://<IPアドレス>/MyReport/assets_and_licenses_report
 
 ## サイドバーに新たに自作のカスタムレポート画面へのリンクを作成する
 
@@ -272,8 +272,8 @@ routes/web.php
 ```php
 ・・・
     // 資産情報とライセンスを並列で出力するレポートのダウロード用アクション
-    Route::get('/MyReport/assets_and_licences_report', [MyReportController::class, 'assets_and_licences_report'])
-        ->name('myreport/assets_and_licences_report');　★ここの設定を追記する
+    Route::get('/MyReport/assets_and_licenses_report', [MyReportController::class, 'assets_and_licenses_report'])
+        ->name('myreport/assets_and_licenses_report');　★ここの設定を追記する
 ・・・
 ```
 
@@ -303,7 +303,7 @@ return [
 先ほど作成したコントローラへのリンクするビューを作成する。
 
 以下のビューを作成すること。
-resources/views/CustomReport/index.blade.php
+resources/views/MyReport/index.blade.php
 ```php
 @extends('layouts/default')
 
@@ -317,7 +317,7 @@ resources/views/CustomReport/index.blade.php
 @section('content')
 
 <div class="text-center col-md-12" style="padding-top: 10px;">
-  <a href="{{ route('myreport/assets_and_licences_report') }}" class="btn btn-primary btn-sm" style="width: 100%">
+  <a href="{{ route('myreport/assets_and_licenses_report') }}" class="btn btn-primary btn-sm" style="width: 100%">
     すべての資産情報とライセンスをまとめてExcelダウンロード
   </a>
 </div>
@@ -329,7 +329,7 @@ resources/views/CustomReport/index.blade.php
 @stop
 ```
 
-※`{{ route('myreport/assets_and_licences_report') }}`は、[こちら](#コントローラルーティング作成)で記述したルーティングの名前（`->name`）に対応する。
+※`{{ route('myreport/assets_and_licenses_report') }}`は、「[[/コントローラ、ルーティング作成]]」で記述したルーティングの名前（`->name`）に対応する。
 
 # 資産情報の標準項目を非表示にする
 
