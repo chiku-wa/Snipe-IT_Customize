@@ -1165,17 +1165,19 @@ Redhatの無償版の入手方法を本稿に記載する。
 
 本稿では割愛する。
 
-##### OSインストール後のサブスクリプション設定
+#### OSインストール後のサブスクリプション設定
 
 OSをインストール後に、Redhatアカウントと紐づけを行う（これを行わないと、`dnf`や`yum`といったコマンドを使用することができず、パッケージ導入などに制限がかかる）。
 
 1. `su -`でrootユーザにスイッチする
 
 2. 以下のコマンドでRedHatへの登録とログインを実行する。
+   ※ユーザ名、パスワードは、ISOを入手した際に使用したRedHat社のアカウントと同様
    ```bash
-   # RedHatサイト・サブスクリプション登録
-   # ※ユーザ名、パスワードは、ISOを入手した際に使用したRedHat社のアカウントと同様
-   subscription-manager register --username <ユーザ名> --password <パスワード>
+   subscription-manager register --username <ユーザ名>
+
+   登録中: subscription.rhsm.redhat.com:443/subscription
+   パスワード:<★Redhatアカウントのパスワードを入力してEnter★>
    ```
 
 3. `subscription-manager identity`でサブスクリプション状況を確認し、システムID等の情報が出力されることを確認する。
