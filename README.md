@@ -1138,6 +1138,7 @@ app/Models/License.php
 
 #### Redhatの導入方法
 
+##### インストーラ入手
 Redhatの無償版の入手方法を本稿に記載する。
 
 1. 事前に、下記サイトでRedHatアカウントを作成しておくこと。
@@ -1159,6 +1160,40 @@ Redhatの無償版の入手方法を本稿に記載する。
 
 5. ダイアログが表示されるため、各種情報を入力してダウンロードを始めること。
    ※個人利用の場合は、Companyは`Personal`(個人を意味する)などを指定すれば良い
+
+#### OSインストール
+
+本稿では割愛する。
+
+##### OSインストール後のサブスクリプション設定
+
+OSをインストール後に、Redhatアカウントと紐づけを行う（これを行わないと、`dnf`や`yum`といったコマンドを使用することができず、パッケージ導入などに制限がかかる）。
+
+1. `su -`でrootユーザにスイッチする
+
+2. 以下のコマンドでRedHatへの登録とログインを実行する。
+   ```bash
+   # RedHatサイト・サブスクリプション登録
+   # ※ユーザ名、パスワードは、ISOを入手した際に使用したRedHat社のアカウントと同様
+   subscription-manager register --username <ユーザ名> --password <パスワード>
+   ```
+
+3. `subscription-manager identity`でサブスクリプション状況を確認し、システムID等の情報が出力されることを確認する。
+   出力例：
+   ```bash
+   システム ID: zzzzxxxxx-xxxx-xxxx-xxxx-xxxxxxx
+   名前: <OSに設定したホスト名>
+   組織名: XXXXX
+   組織 ID: XXXXXX
+   ```
+
+- - -
+■`Simple Content Access`(`SCA`)について
+
+参考：[Simple Content Accessでサブスクリプション管理を簡単にしたい - 赤帽エンジニアブログ](https://rheb.hatenablog.com/entry/simple-content-access)
+
+- - -
+
 
 ### プレイブックについて
 
