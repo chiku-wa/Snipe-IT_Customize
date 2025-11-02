@@ -1104,7 +1104,41 @@ app/Models/License.php
 
 # 参考
 
+## 仮想環境の構築方法
+
 ## Ansibleを用いたSnipe-IT構築
+
+### 前提となる仮想環境構築
+
+本記事執筆時では、M2 Macbook上で仮想感環境（`VM Ware Fusion`）を構築した上で、仮想環境上のゲストOSに対してAnsibleを実行し、構築を行っている。
+参考までに本稿にて必要なソフトウェアの導入方法等を記載する。
+
+<span style="color: red;">【注意】本稿で紹介するソフトウェア各種は商用利用禁止であるため、個人の学習や検証で用いることを前提とする</span>
+
+#### VM Ware Fusion導入
+
+事前にBroadcomのアカウントを作成しておくこと。
+[Registration](https://profile.broadcom.com/web/registration)
+
+ログイン後、`My Download`→`Free Software Downloads available HERE`のリンクをクリックする。
+[Home - Support Portal - Broadcom support portal - Support Portal - Broadcom support portal](https://support.broadcom.com/group/ecx/productdownloads?subfamily=VMware%20Fusion&freeDownloads=true)
+
+![](readme_images/README_2025-11-02-12-01-20.png)
+
+製品の一覧が表示されるため、`VMWare Fusion`をクリックする。
+
+![](readme_images/README_2025-11-02-12-02-34.png)
+
+任意のバージョンをクリックしてインストーラを入手し、インストールを行う。
+
+![](readme_images/README_2025-11-02-12-05-41.png)
+
+`Terms and Conditions `をクリックして規約を読み、その後チェックボックスにチェックを入れてからインストーラを入手すること。
+※**~規約を読まないとチェックを入れることができない~**
+
+![](readme_images/README_2025-11-02-12-06-10.png)
+
+### プレイブック
 
 本リポジトリでは、Ansibleで自動的にSnipe-ITを構築できるようにプレイブックも同梱している。
 必要なファイルは以下の通り。
