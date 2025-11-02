@@ -1104,8 +1104,6 @@ app/Models/License.php
 
 # 参考
 
-## 仮想環境の構築方法
-
 ## Ansibleを用いたSnipe-IT構築
 
 ### 前提となる仮想環境構築
@@ -1138,7 +1136,31 @@ app/Models/License.php
 
 ![](readme_images/README_2025-11-02-12-06-10.png)
 
-### プレイブック
+#### Redhatの導入方法
+
+Redhatの無償版の入手方法を本稿に記載する。
+
+1. 事前に、下記サイトでRedHatアカウントを作成しておくこと。
+   [redhat.com](https://www.redhat.com/wapps/ugc/register.html?_flowId=register-flow&_flowExecutionKey=e1s1)
+
+2. 下記サイトにアクセスする。
+   [Getting Red Hat Developer Subscription: What RHEL users need to know | Red Hat Developer](https://developers.redhat.com/articles/getting-red-hat-developer-subscription-what-rhel-users-need-know#)
+
+3. `Download Red Hat Enterprise Linux Server`のリンクをクリックする。
+
+    ![](readme_images/README_2025-11-02-12-15-46.png)
+
+4. `Get Red Hat Enterprise Linux`→`Red Hat Enterprise Linux ISO and images`→`RHEL Server ISO`の項から、インストールしたいOSに応じた`Download ISO`リンクからインストーラをDLする。
+   ※Apple Silicon製のMacを使う場合は、必ずARM用のインストーラ（インストーラのファイル名に`aarch`が含まれているファイル）をDLすること！
+
+    ![](readme_images/README_2025-11-02-12-16-19.png)
+    ↓
+    ![](readme_images/README_2025-11-02-12-16-33.png)
+
+5. ダイアログが表示されるため、各種情報を入力してダウンロードを始めること。
+   ※個人利用の場合は、Companyは`Personal`(個人を意味する)などを指定すれば良い
+
+### プレイブックについて
 
 本リポジトリでは、Ansibleで自動的にSnipe-ITを構築できるようにプレイブックも同梱している。
 必要なファイルは以下の通り。
