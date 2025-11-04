@@ -1116,9 +1116,11 @@ app/Models/License.php
 #### VM Ware Fusion導入
 
 事前にBroadcomのアカウントを作成しておくこと。
+
 [Registration](https://profile.broadcom.com/web/registration)
 
 ログイン後、`My Download`→`Free Software Downloads available HERE`のリンクをクリックする。
+
 [Home - Support Portal - Broadcom support portal - Support Portal - Broadcom support portal](https://support.broadcom.com/group/ecx/productdownloads?subfamily=VMware%20Fusion&freeDownloads=true)
 
 ![](readme_images/README_2025-11-02-12-01-20.png)
@@ -1132,7 +1134,8 @@ app/Models/License.php
 ![](readme_images/README_2025-11-02-12-05-41.png)
 
 `Terms and Conditions `をクリックして規約を読み、その後チェックボックスにチェックを入れてからインストーラを入手すること。
-※**~規約を読まないとチェックを入れることができない~**
+
+※**規約を読まないとチェックを入れることができない**
 
 ![](readme_images/README_2025-11-02-12-06-10.png)
 
@@ -1142,9 +1145,11 @@ app/Models/License.php
 Redhatの無償版の入手方法を本稿に記載する。
 
 1. 事前に、下記サイトでRedHatアカウントを作成しておくこと。
+
    [redhat.com](https://www.redhat.com/wapps/ugc/register.html?_flowId=register-flow&_flowExecutionKey=e1s1)
 
 2. 下記サイトにアクセスする。
+
    [Getting Red Hat Developer Subscription: What RHEL users need to know | Red Hat Developer](https://developers.redhat.com/articles/getting-red-hat-developer-subscription-what-rhel-users-need-know#)
 
 3. `Download Red Hat Enterprise Linux Server`のリンクをクリックする。
@@ -1152,13 +1157,20 @@ Redhatの無償版の入手方法を本稿に記載する。
     ![](readme_images/README_2025-11-02-12-15-46.png)
 
 4. `Get Red Hat Enterprise Linux`→`Red Hat Enterprise Linux ISO and images`→`RHEL Server ISO`の項から、インストールしたいOSに応じた`Download ISO`リンクからインストーラをDLする。
-   ※Apple Silicon製のMacを使う場合は、必ずARM用のインストーラ（インストーラのファイル名に`aarch`が含まれているファイル）をDLすること！
+
 
     ![](readme_images/README_2025-11-02-12-16-19.png)
     ↓
     ![](readme_images/README_2025-11-02-12-16-33.png)
 
+     なお、旧バージョンを入手する場合は以下のように直接URLにアクセスすると良い。
+
+     例：Redhat8.10の場合
+     https://developers.redhat.com/content-gateway/file/rhel/Red_Hat_Enterprise_Linux_8.10/rhel-8.10-aarch64-boot.iso
+
+
 5. ダイアログが表示されるため、各種情報を入力してダウンロードを始めること。
+
    ※個人利用の場合は、Companyは`Personal`(個人を意味する)などを指定すれば良い
 
 #### OSインストール
@@ -1172,6 +1184,7 @@ OSをインストール後に、Redhatアカウントと紐づけを行う（こ
 1. `su -`でrootユーザにスイッチする
 
 2. 以下のコマンドでRedHatへの登録とログインを実行する。
+
    ※ユーザ名、パスワードは、ISOを入手した際に使用したRedHat社のアカウントと同様
    ```bash
    subscription-manager register --username <ユーザ名>
@@ -1181,6 +1194,7 @@ OSをインストール後に、Redhatアカウントと紐づけを行う（こ
    ```
 
 3. `subscription-manager identity`でサブスクリプション状況を確認し、システムID等の情報が出力されることを確認する。
+
    出力例：
    ```bash
    システム ID: zzzzxxxxx-xxxx-xxxx-xxxx-xxxxxxx
